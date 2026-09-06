@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Video Mini App</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Telegram Web App Script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen font-sans">
+
+    <!-- হেডার সেকশন -->
+    <header class="bg-slate-800 p-4 text-center shadow-md sticky top-0 z-50">
+        <h1 class="text-xl font-bold text-cyan-400">🎬 প্রিমিয়াম ভিডিও কালেকশন</h1>
+        <p class="text-xs text-slate-400">ভিডিও দেখতে ১০ সেকেন্ড অপেক্ষা করুন</p>
+    </header>
+
+    <!-- মেইন কন্টেন্ট / ভিডিও লিস্ট -->
+    <main class="p-4 max-w-md mx-auto space-y-4">
+
+        <!-- ভিডিও কার্ড ১ -->
+        <div class="bg-slate-800 rounded-xl overflow-hidden shadow-lg border border-slate-700">
+            <!-- থাম্বনেইল ইমেজ -->
+            <div class="relative">
+                <img src="https://via.placeholder.com/400x225" alt="Thumbnail" class="w-full h-48 object-cover">
+                <span class="absolute bottom-2 right-2 bg-black/70 text-xs px-2 py-1 rounded text-cyan-300">১০ সেকেন্ড</span>
+            </div>
+
+            <!-- ভিডিও বিবরণ ও আনলক সেকশন -->
+            <div class="p-4">
+                <p class="font-semibold text-sm mb-2">টেলিগ্রাম স্পেশাল ভিডিও পর্ব ১</p>
+                
+                <!-- লক / টাইমার বক্স -->
+                <div id="lock-box-1" class="mt-4 bg-slate-900/60 p-3 rounded-lg text-center border border-slate-700">
+                    <p id="timer-text-1" class="text-sm text-yellow-400 mb-2">🔒 ভিডিওটি লক করা আছে</p>
+                    <button onclick="startUnlockTimer(1)" id="unlock-btn-1" class="w-full bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold py-2 px-4 rounded-lg transition">
+                        অ্যাড দেখে আনলক করুন 🚀
+                    </button>
+                </div>
+
+                <!-- আসল ভিডিও প্লেয়ার (প্রথমে লুকিয়ে থাকবে) -->
+                <div id="video-box-1" class="hidden mt-4">
+                    <video controls class="w-full rounded-lg">
+                        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+                        আপনার ব্রাউজার ভিডিও ট্যাগ সমর্থন করে না।
+                    </video>
+                    <p class="text-xs text-green-400 mt-2 text-center">✅ সফলভাবে আনলক হয়েছে!</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- জাভাস্ক্রিপ্ট লজিক -->
+    <script>
+        // টেলিগ্রাম ওয়েব অ্যাপ ইনিশিয়ালাইজ
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        function startUnlockTimer(id) {
+            let timeLeft = 10;
+            const timerText = document.getElementById(`timer-text-${id}`);
+            const unlockBtn = document.getElementById(`unlock-btn-${id}`);
+            const lockBox = document.getElementById(`lock-box-${id}`);
+            const videoBox = document.getElementById(`video-box-${id}`);
+
+            // বাটন ডিজেবল করা
+            unlockBtn.disabled = true;
+            unlockBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            let countdown = setInterval(() => {
+                timeLeft--;
+                timerText.innerHTML = `⏳ আনলক হতে বাকি: ${timeLeft} সেকেন্ড`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    // লক বক্স লুকিয়ে ভিডিও বক্স দেখানো
+                    lockBox.style.display = 'none';
+                    videoBox.classList.remove('hidden');
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

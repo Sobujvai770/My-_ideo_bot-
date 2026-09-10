@@ -11,28 +11,26 @@
 </head>
 <body class="bg-slate-900 text-white min-h-screen font-sans">
 
-    <!-- মূল কনটেন্ট / ভিডিও লিস্ট -->
+    <!-- মূল কন্টেইনার / ভিডিও লিস্ট -->
     <main class="p-4 max-w-md mx-auto space-y-4">
 
-        <!-- ভিডিও কার্ড ১ -->
-        <div class="bg-slate-800 rounded-xl overflow-hidden shadow-lg border border-slate-700 p-4">
-            
-            <!-- থাম্বেইল ইমেজ (এটিতে ক্লিক করলে লক অপশন আসবে) -->
+        <!-- ভিডিও কার্ড -->
+        <div class="bg-slate-800 rounded-xl shadow-lg border border-slate-700 p-4">
+
+            <!-- থাম্বনেইল ইমেজ (এতে ক্লিক করলে লক বক্স দেখাবে) -->
             <div class="relative cursor-pointer" onclick="toggleLockBox()">
-                <img src="https://files.catbox.moe/opifn2.jpeg" alt="Thumbnail" class="w-full h-48 object-cover rounded-lg">
+                <img src="https://files.catbox.moe/apifn2.jpeg" alt="Thumbnail" class="w-full h-48 object-cover rounded-lg">
             </div>
 
-            <!-- আপনার নিজের ইচ্ছামতো ক্যাপশন -->
+            <!-- আপনার ভিডিওর সুন্দর ক্যাপশন -->
             <div class="mt-3">
-                <p class="font-semibold text-sm" <
-                    /p>
-            </div><p class="font-semibold text-sm">কি করাটাই না করলো সেই একটা কড়া মাল পুরা ১৫:২৩ সেকেন্ড</p>
+                <p class="font-semibold text-sm">কি করাটাই না করলো সেই একটা কড়া মাল পুরা ১৫:২৩ সেকেন্ড</p>
+            </div>
 
-
-            <!-- লক / টাইমার বক্স (প্রথমে লুকিয়ে থাকবে, থাম্বেইলে ক্লিক করলে আসবে) -->
+            <!-- লক / টাইমার বক্স (প্রথমে লুকিয়ে থাকবে, থাম্বনেইলে ক্লিক করলে আসবে) -->
             <div id="lock-box-1" class="mt-4 bg-slate-900/60 p-3 rounded-lg text-center border border-slate-700 hidden">
                 <p id="timer-text-1" class="text-sm text-yellow-400 mb-2">🔒 ভিডিওটি লক করা আছে</p>
-                <button onclick="startUnlockTimer(1)" id="unlock-btn-1" class="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition">
+                <button onclick="startUnlockTimer(1)" id="unlock-btn-1" class="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-medium py-2 rounded-lg transition">
                     অ্যাড দেখে আনলক করুন 🚀
                 </button>
             </div>
@@ -52,11 +50,11 @@
 
     <!-- জাভাস্ক্রিপ্ট লজিক -->
     <script>
-        // টেলিগ্রাম ওয়েব অ্যাপ ইনিশিয়েলাইজেশন
+        // টেলিগ্রাম ওয়েব অ্যাপ ইনিশিয়ালাইজেশন
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // থাম্বেইলে ক্লিক করলে লক বক্স দেখানোর ফাংশন
+        // থাম্বনেইলে ক্লিক করলে লক বক্স দেখানোর ফাংশন
         function toggleLockBox() {
             let lockBox = document.getElementById('lock-box-1');
             if (lockBox.classList.contains('hidden')) {
@@ -66,9 +64,9 @@
             }
         }
 
+        // অ্যাড দেখে টাইমার শুরু করার এবং অ্যাড খোলার ফাংশন
         function startUnlockTimer(id) {
-        let adsterraUrl = "<script src="https://pl31154034.profitableratecpmnetwork.com/3d/d9/7c/3dd97c23f6aedb7da3bb8a43a3d6bf1e.js"></script>
-";
+            let adsterraUrl = "আপনার_পপুলার_বা_ডাইরেক্ট_লিংকটি_এখানে_বসান";
             window.open(adsterraUrl, '_blank');
 
             let timerText = document.getElementById(`timer-text-${id}`);
@@ -94,6 +92,5 @@
             }, 1000);
         }
     </script>
-    <script src="https://pl31154033.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e4711115e3e087d020.js"></script>
 </body>
 </html>

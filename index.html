@@ -16,6 +16,7 @@
 </head>
 <body class="bg-[#0f172a] text-white min-h-screen font-sans">
 
+    <!-- ওপরের হেডার বার -->
     <header class="flex items-center justify-between px-4 py-3 bg-[#1e293b] border-b border-slate-800 sticky top-0 z-50">
         <div class="flex items-center space-x-2">
             <span class="text-xl">🔥</span>
@@ -29,64 +30,91 @@
         </button>
     </header>
 
-    <main class="p-4 max-w-md mx-auto space-y-4">
-
+    <!-- মূল কন্টেইনার (যেখানে ভিডিওগুলো ডায়নামিকভাবে লোড হবে) -->
+    <main id="video-container" class="p-4 max-w-md mx-auto space-y-4">
         <div class="flex items-center space-x-1 text-yellow-400 font-semibold text-sm">
             <span>⚡</span>
             <span>Recent Added</span>
         </div>
-
-        <div class="rainbow-border shadow-xl">
-            <div class="bg-[#1e293b] rounded-2xl p-3">
-
-                <div class="relative cursor-pointer rounded-xl overflow-hidden bg-slate-800" onclick="toggleLockBox()">
-                    <div class="grid grid-cols-3 gap-1 h-36">
-                        <img src="https://files.catbox.moe/apifn2.jpeg" class="w-full h-full object-cover">
-                        <img src="https://files.catbox.moe/apifn2.jpeg" class="w-full h-full object-cover">
-                        <img src="https://files.catbox.moe/apifn2.jpeg" class="w-full h-full object-cover">
-                    </div>
-                    <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded-md text-[11px] flex items-center space-x-1 text-slate-200">
-                        <span>👁️</span>
-                        <span>2.3k</span>
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-between mt-3">
-                    <div class="flex items-center space-x-2">
-                        <div class="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center font-bold text-xs">VV</div>
-                        <p class="text-xs font-medium text-slate-200 line-clamp-1">নিউ ভাইরাল ভিডিও প্রেমিককে সব খুলে দেখাচ্ছে</p>
-                    </div>
-                    <div class="bg-red-600/80 p-1.5 rounded-full text-white">
-                        ▶
-                    </div>
-                </div>
-
-                <div id="lock-box-1" class="mt-3 bg-slate-900/90 p-3 rounded-xl text-center border border-slate-700 hidden">
-                    <p id="timer-text-1" class="text-xs text-yellow-400 mb-2">🔒 ভিডিওটি লক করা আছে</p>
-                    <button onclick="startUnlockTimer(1)" id="unlock-btn-1" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-medium py-2 rounded-lg text-xs transition shadow-md">
-                        অ্যাড দেখে আনলক করুন 🚀
-                    </button>
-                </div>
-
-                <div id="video-box-1" class="hidden mt-3">
-                    <video controls class="w-full rounded-xl">
-                        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
-                        আপনার ব্রাউজার ভিডিও ট্যাগ সমর্থন করে না।
-                    </video>
-                    <p class="text-[11px] text-emerald-400 mt-2 text-center">✅ সফলভাবে আনলক হয়েছে!</p>
-                </div>
-
-            </div>
-        </div>
-
     </main>
 
+    <!-- জাভাস্ক্রিপ্ট লজিক -->
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        function toggleLockBox() {
-            let lockBox = document.getElementById('lock-box-1');
+        // 🔥 এখানে আপনি যত খুশি নতুন ভিডিও যোগ করতে পারবেন (কমা দিয়ে দিয়ে নিচে নিচে বাড়াবেন)
+        const videosData = [
+            {
+                id: 1,
+                thumbnail: "https://files.catbox.moe/apifn2.jpeg",
+                caption: "নিউ ভাইরাল ভিডিও প্রেমিককে সব খুলে দেখাচ্ছে",
+                views: "2.3k",
+                videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
+                adsterraUrl: "https://pl31154034.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e471f49615a9d36232"
+            }
+            // আরেকটি ভিডিও যোগ করতে চাইলে ওটার মতো নিচে কমা দিয়ে ব্র্যাকেট দিন:
+            /*
+            {
+                id: 2,
+                thumbnail: "ছবির_লিংক",
+                caption: "ভিডিওর_ক্যাপশন",
+                views: "1.5k",
+                videoUrl: "ভিডিওর_লিংক",
+                adsterraUrl: "অ্যাডস্টেরা_লিংক"
+            }
+            */
+        ];
+
+        const container = document.getElementById('video-container');
+
+        // ডাটা লুপ চালিয়ে কার্ড তৈরি করা
+        videosData.forEach(video => {
+            const card = document.createElement('div');
+            card.className = "rainbow-border shadow-xl";
+            card.innerHTML = `
+                <div class="bg-[#1e293b] rounded-2xl p-3">
+                    <div class="relative cursor-pointer rounded-xl overflow-hidden bg-slate-800" onclick="toggleLockBox(${video.id})">
+                        <div class="grid grid-cols-3 gap-1 h-36">
+                            <img src="${video.thumbnail}" class="w-full h-full object-cover">
+                            <img src="${video.thumbnail}" class="w-full h-full object-cover">
+                            <img src="${video.thumbnail}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded-md text-[11px] flex items-center space-x-1 text-slate-200">
+                            <span>👁️</span>
+                            <span>${video.views}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-3">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center font-bold text-xs">VV</div>
+                            <p class="text-xs font-medium text-slate-200 line-clamp-1">${video.caption}</p>
+                        </div>
+                        <div class="bg-red-600/80 p-1.5 rounded-full text-white">▶</div>
+                    </div>
+
+                    <div id="lock-box-${video.id}" class="mt-3 bg-slate-900/90 p-3 rounded-xl text-center border border-slate-700 hidden">
+                        <p id="timer-text-${video.id}" class="text-xs text-yellow-400 mb-2">🔒 ভিডিওটি লক করা আছে</p>
+                        <button onclick="startUnlockTimer(${video.id}, '${video.adsterraUrl}')" id="unlock-btn-${video.id}" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-medium py-2 rounded-lg text-xs transition shadow-md">
+                            অ্যাড দেখে আনলক করুন 🚀
+                        </button>
+                    </div>
+
+                    <div id="video-box-${video.id}" class="hidden mt-3">
+                        <video controls class="w-full rounded-xl">
+                            <source src="${video.videoUrl}" type="video/mp4">
+                            আপনার ব্রাউজার ভিডিও ট্যাগ সমর্থন করে না।
+                        </video>
+                        <p class="text-[11px] text-emerald-400 mt-2 text-center">✅ সফলভাবে আনলক হয়েছে!</p>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+
+        function toggleLockBox(id) {
+            let lockBox = document.getElementById(`lock-box-${id}`);
             if (lockBox.classList.contains('hidden')) {
                 lockBox.classList.remove('hidden');
             } else {
@@ -94,9 +122,8 @@
             }
         }
 
-        function startUnlockTimer(id) {
-            let adsterraUrl = "https://pl31154034.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e471f49615a9d36232";
-            window.open(adsterraUrl, '_blank');
+        function startUnlockTimer(id, adUrl) {
+            window.open(adUrl, '_blank');
 
             let timerText = document.getElementById(`timer-text-${id}`);
             let unlockBtn = document.getElementById(`unlock-btn-${id}`);

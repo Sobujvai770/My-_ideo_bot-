@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VAIRAL VIDEO</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Telegram Web App Script -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         .rainbow-border {
@@ -18,7 +16,6 @@
 </head>
 <body class="bg-[#0f172a] text-white min-h-screen font-sans">
 
-    <!-- ওপরের হেডার বার -->
     <header class="flex items-center justify-between px-4 py-3 bg-[#1e293b] border-b border-slate-800 sticky top-0 z-50">
         <div class="flex items-center space-x-2">
             <span class="text-xl">🔥</span>
@@ -32,7 +29,6 @@
         </button>
     </header>
 
-    <!-- মূল কন্টেইনার -->
     <main class="p-4 max-w-md mx-auto space-y-4">
 
         <div class="flex items-center space-x-1 text-yellow-400 font-semibold text-sm">
@@ -40,25 +36,21 @@
             <span>Recent Added</span>
         </div>
 
-        <!-- ভিডিও কার্ড -->
         <div class="rainbow-border shadow-xl">
             <div class="bg-[#1e293b] rounded-2xl p-3">
 
-                <!-- থাম্বনেইল সেকশন (এতে ক্লিক করলে লক বক্স আসবে) -->
                 <div class="relative cursor-pointer rounded-xl overflow-hidden bg-slate-800" onclick="toggleLockBox()">
                     <div class="grid grid-cols-3 gap-1 h-36">
                         <img src="https://files.catbox.moe/apifn2.jpeg" class="w-full h-full object-cover">
                         <img src="https://files.catbox.moe/apifn2.jpeg" class="w-full h-full object-cover">
                         <img src="https://files.catbox.moe/apifn2.jpeg" class="w-full h-full object-cover">
                     </div>
-                    <!-- চোখের আইকনসহ ভিউ কাউন্ট -->
                     <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded-md text-[11px] flex items-center space-x-1 text-slate-200">
                         <span>👁️</span>
-                        <span>2.3k</span>
+                        <span>k</span>
                     </div>
                 </div>
 
-                <!-- ক্যাপশন ও লোগো বার -->
                 <div class="flex items-center justify-between mt-3">
                     <div class="flex items-center space-x-2">
                         <div class="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center font-bold text-xs">VV</div>
@@ -69,7 +61,6 @@
                     </div>
                 </div>
 
-                <!-- লক / টাইমার বক্স -->
                 <div id="lock-box-1" class="mt-3 bg-slate-900/90 p-3 rounded-xl text-center border border-slate-700 hidden">
                     <p id="timer-text-1" class="text-xs text-yellow-400 mb-2">🔒 ভিডিওটি লক করা আছে</p>
                     <button onclick="startUnlockTimer(1)" id="unlock-btn-1" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-medium py-2 rounded-lg text-xs transition shadow-md">
@@ -77,7 +68,6 @@
                     </button>
                 </div>
 
-                <!-- আসল ভিডিও প্লেয়ার -->
                 <div id="video-box-1" class="hidden mt-3">
                     <video controls class="w-full rounded-xl">
                         <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
@@ -91,7 +81,6 @@
 
     </main>
 
-    <!-- জাভাস্ক্রিপ্ট লজিক -->
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
@@ -111,8 +100,8 @@
 
             let timerText = document.getElementById(`timer-text-${id}`);
             let unlockBtn = document.getElementById(`unlock-btn-${id}`);
-            let lockBox = document.getElementById(`lock-box-1`);
-            let videoBox = document.getElementById(`video-box-1`);
+            let lockBox = document.getElementById(`lock-box-${id}`);
+            let videoBox = document.getElementById(`video-box-${id}`);
 
             unlockBtn.disabled = true;
             unlockBtn.classList.add('opacity-50', 'cursor-not-allowed');

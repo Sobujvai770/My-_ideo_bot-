@@ -43,7 +43,8 @@
             <span class="text-orange-500 font-bold text-lg">🔥 My Video Bot Hub</span>
         </div>
         <div>
-            <button onclick="openAdminLogin()" class="bg-slate-700 hover:bg-slate-600 text-xs px-2.5 py-1.5 rounded-lg text-slate-200 transition">⚙️ Admin</button>
+            <!-- শুধু আইকন রাখা হয়েছে -->
+            <button onclick="openAdminLogin()" class="bg-slate-700 hover:bg-slate-600 w-8 h-8 rounded-lg text-slate-200 transition flex items-center justify-center text-sm">⚙️</button>
         </div>
     </header>
 
@@ -59,7 +60,7 @@
         <div id="video-container" class="space-y-4"></div>
     </main>
 
-    <!-- অ্যাডমিন লগইন বা প্যানেল মোডাল -->
+    <!-- অ্যাডমিন লগইন ও প্যানেল মোডাল -->
     <div id="admin-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-5 border border-slate-700 relative shadow-2xl max-h-[90vh] overflow-y-auto">
             <button onclick="closeAdminModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold">✕</button>
@@ -142,15 +143,13 @@
                 card.className = "rainbow-border shadow-xl";
                 card.innerHTML = `
                     <div class="bg-[#1e293b] rounded-2xl p-3">
-                        <div class="relative cursor-pointer rounded-xl overflow-hidden bg-slate-800" onclick="openModal(${video.id})">
+                        <div class="relative cursor-pointer rounded-xl overflow-hidden bg-slate-800 h-48" onclick="openModal(${video.id})">
                             <div class="absolute top-2 right-2 bg-black/70 text-yellow-400 px-2 py-0.5 rounded text-[10px] font-bold z-10">
                                 ${video.parts || '1 Part'}
                             </div>
-                            <div class="grid grid-cols-3 gap-1 h-32">
-                                <img src="${video.thumbnail}" class="w-full h-full object-cover">
-                                <img src="${video.thumbnail}" class="w-full h-full object-cover">
-                                <img src="${video.thumbnail}" class="w-full h-full object-cover">
-                            </div>
+                            <!-- একটি মাত্র ছবি দেখানোর জন্য সিঙ্গেল ইমেজ ট্যাগ -->
+                            <img src="${video.thumbnail}" class="w-full h-full object-cover">
+                            
                             <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded-md text-[11px] flex items-center space-x-1 text-slate-200">
                                 <span>👁️</span>
                                 <span>${video.views || '1.2k'}</span>

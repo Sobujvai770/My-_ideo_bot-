@@ -32,7 +32,7 @@
 
     <!-- স্প্ল্যাশ স্ক্রিন -->
     <div id="splash-screen">
-        <img src="https://files.catbox.moe/ltjvrt.png" class="w-24 h-24 rounded-full object-cover border-2 border-orange-500 shadow-2xl animate-pulse">
+        <img src="https://files.catbox.moe/apifn2.jpeg" class="w-24 h-24 rounded-full object-cover border-2 border-orange-500 shadow-2xl animate-pulse">
         <h2 class="text-orange-500 font-bold text-lg mt-3">My Video Bot</h2>
         <p class="text-xs text-slate-400 mt-1">লোড হচ্ছে, একটু অপেক্ষা করুন...</p>
     </div>
@@ -43,7 +43,6 @@
             <span class="text-orange-500 font-bold text-lg">🔥 My Video Bot Hub</span>
         </div>
         <div>
-            <!-- আইকনটিতে ক্লিক করলে আপনার আইডি চেক করবে -->
             <button onclick="checkAdminAccess()" class="bg-slate-700 hover:bg-slate-600 w-8 h-8 rounded-lg text-slate-200 transition flex items-center justify-center text-sm">⚙️</button>
         </div>
     </header>
@@ -93,6 +92,10 @@
                     <label class="text-[11px] text-slate-400">কত পার্ট বা কোয়ালিটি (যেমন: 2 Parts):</label>
                     <input type="text" id="inp-parts" value="2 Parts" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
                 </div>
+                <div>
+                    <label class="text-[11px] text-slate-400">ভিডিও কোড (যেমন: v1, v2):</label>
+                    <input type="text" id="inp-vidcode" placeholder="v1" value="v1" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+                </div>
                 <button onclick="addNewVideo()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-xs transition shadow-md mt-2">সংরক্ষণ করুন (Publish)</button>
                 
                 <hr class="border-slate-700 my-3">
@@ -111,6 +114,18 @@
         </div>
     </div>
 
+    <!-- সফল আনলক পপআপ -->
+    <div id="success-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white text-slate-900 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl text-center">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4 font-bold">✓</div>
+            <h3 class="font-bold text-lg text-slate-800 mb-2">আনলক সম্পন্ন হয়েছে!</h3>
+            <p class="text-xs text-slate-600 mb-6 leading-relaxed">নিচের বাটনটি ক্লিক করলে ভিডিওটি সরাসরি আপনার টেলিগ্রাম ইনবক্সে চলে যাবে।</p>
+            <a id="send-to-telegram-btn" href="#" target="_blank" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-2xl text-sm transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/30">
+                <span>📥 ইনবক্সে পাঠান</span>
+            </a>
+        </div>
+    </div>
+
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
@@ -118,11 +133,11 @@
         let defaultVideos = [
             {
                 id: 1,
+                vidCode: "v1",
                 parts: "2 Parts",
                 thumbnail: "https://files.catbox.moe/apifn2.jpeg",
-                caption: "এই মেয়ের একটা নিউ ভাইরাল ভিডিও বাইরে বাই কি জিনিস 💋",
+                caption: "সেই একটা মাল দুধ গুলো দেখার মতন 2 ভিডিও",
                 views: "2.3k",
-                videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
                 adsterraUrl: "https://pl31154034.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e471f49615a9d36232"
             }
         ];
@@ -170,18 +185,13 @@
 
         renderVideos();
 
-        // আপনার দেওয়া টেলিগ্রাম আইডি এখানে সেট করা হলো
         const ADMIN_TELEGRAM_ID = 8326665891; 
 
         function checkAdminAccess() {
             let user = tg.initDataUnsafe && tg.initDataUnsafe.user;
-            
-            // যদি ইউজার আইডি না মেলে বা ব্রাউজার থেকে খোলা হয়, তবে কাজ করবে না
             if (!user || user.id !== ADMIN_TELEGRAM_ID) {
                 return; 
             }
-
-            // আইডি মিলে গেলে অ্যাডমিন প্যানেল ওপেন হবে
             document.getElementById('admin-modal').classList.remove('hidden');
             document.getElementById('admin-login-box').classList.remove('hidden');
             document.getElementById('admin-panel-box').classList.add('hidden');
@@ -208,6 +218,7 @@
             let videoUrl = document.getElementById('inp-videourl').value;
             let adUrl = document.getElementById('inp-adurl').value;
             let parts = document.getElementById('inp-parts').value;
+            let vidCode = document.getElementById('inp-vidcode').value || 'v1';
 
             if(!thumb || !videoUrl || !adUrl) {
                 alert("দয়া করে থাম্বনেইল লিংক, ভিডিও লিংক এবং অ্যাডস্টেরা লিংক পূরণ করুন!");
@@ -216,6 +227,7 @@
 
             let newVideo = {
                 id: Date.now(),
+                vidCode: vidCode,
                 parts: parts,
                 thumbnail: thumb,
                 caption: caption || "নিউ ভাইরাল ভিডিও 💋",
@@ -245,7 +257,7 @@
             const modalContent = document.getElementById('modal-content');
             
             modalContent.innerHTML = `
-                <button onclick="startUnlock(${video.id}, '${video.adsterraUrl}', '${video.videoUrl}')" id="unlock-btn-${video.id}" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded-xl flex items-center justify-between text-xs text-white transition">
+                <button onclick="startUnlock(${video.id}, '${video.adsterraUrl}', '${video.vidCode}')" id="unlock-btn-${video.id}" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded-xl flex items-center justify-between text-xs text-white transition">
                     <span class="flex items-center space-x-2">
                         <span>📥</span>
                         <span>Video Part [HD]</span>
@@ -260,7 +272,7 @@
             document.getElementById('unlock-modal').classList.add('hidden');
         }
 
-        function startUnlock(id, adUrl, videoUrl) {
+        function startUnlock(id, adUrl, vidCode) {
             window.open(adUrl, '_blank');
             const btn = document.getElementById(`unlock-btn-${id}`);
             btn.disabled = true;
@@ -272,11 +284,13 @@
 
                 if (timeLeft <= 0) {
                     clearInterval(countdown);
-                    btn.innerHTML = `<span>✅ আনলক সফল! দেখতে ক্লিক করুন</span>`;
-                    btn.className = "w-full bg-emerald-600 hover:bg-emerald-700 p-3 rounded-xl text-center text-xs text-white font-bold transition";
-                    btn.onclick = function() {
-                        window.location.href = videoUrl;
-                    };
+                    document.getElementById('unlock-modal').classList.add('hidden');
+                    
+                    // এখানে আপনার ইউজারনেম @my_video8_bot বসানো হয়েছে
+                    let botUsername = "my_video8_bot"; 
+                    document.getElementById('send-to-telegram-btn').href = `https://t.me/${botUsername}?start=${vidCode}`;
+                    
+                    document.getElementById('success-modal').classList.remove('hidden');
                 }
             }, 1000);
         }

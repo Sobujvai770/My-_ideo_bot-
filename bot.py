@@ -70,7 +70,6 @@ def run_web():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-# নতুন টোকেন এখানে সেট করা হলো
 BOT_TOKEN = '8787602161:AAEnBbGJxxukqXjIdeBYjD7oWUzLkT9vbJY'
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -88,9 +87,8 @@ def send_welcome(message):
             if v_data.get("ad_link"):
                 markup.row(types.InlineKeyboardButton("🎬 Watch Full Video / Sponsor", url=v_data["ad_link"]))
             
-            markup.row(
-                types.InlineKeyboardButton("📢 Main Channel", url="https://t.me/+rLjXcZr21B45MWQ1")
-            )
+            # মেইন চ্যানেল লেখা থাকবে কিন্তু কোনো প্রাইভেট লিংকে নিয়ে যাবে না (callback_data দেওয়া হয়েছে যাতে ক্লিক করলে জাস্ট অ্যালার্ট দেয় বা কাজ না করে)
+            markup.row(types.InlineKeyboardButton("📢 Main Channel", callback_data="main_channel_info"))
             
             bot.send_video(message.chat.id, v_data["video_file_id"], caption=v_data["caption"], reply_markup=markup)
             return
@@ -106,6 +104,11 @@ def send_welcome(message):
     )
     
     bot.send_message(message.chat.id, welcome_text, reply_markup=markup)
+
+# মেইন চ্যানেল বাটনে ক্লিক করলে যেন কোনো প্রাইভেট লিংকে না নিয়ে যায়, তার হ্যান্ডলার
+@bot.callback_query_handler(func=lambda call: call.data == "main_channel_info")
+def callback_main_channel(call):
+    bot.answer_callback_query(call.id, "📢 এটি আমাদের অফিসিয়াল মেইন চ্যানেল!", show_alert=True)
 
 @bot.message_handler(content_types=['video'])
 def get_video_id(message):
@@ -126,3 +129,4 @@ if __name__ == "__main__":
     web_thread.start()
     
     run_bot()
+

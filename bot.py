@@ -52,8 +52,8 @@ def send_welcome(message):
         "👇 দেরি না করে নিচের মেনু থেকে অ্যাপটি ওপেন করুন! 👇"
     )
     
-    banner_img = "https://files.catbox.moe/apifn2.jpeg"
-    bot.send_photo(message.chat.id, banner_img, caption=welcome_text, reply_markup=markup)
+    # ছবির লিংক এরর এড়াতে সরাসরি মেসেজ ও মিনি অ্যাপের বাটন পাঠানো হচ্ছে
+    bot.send_message(message.chat.id, welcome_text, reply_markup=markup)
 
 def run_bot():
     print("Bot is running...")
@@ -66,4 +66,3 @@ if __name__ == "__main__":
     
     # টেলিগ্রাম বট রান করা
     run_bot()
-

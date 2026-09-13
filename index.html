@@ -92,10 +92,6 @@
                     <label class="text-[11px] text-slate-400">কত পার্ট বা কোয়ালিটি (যেমন: 2 Parts):</label>
                     <input type="text" id="inp-parts" value="2 Parts" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
                 </div>
-                <div>
-                    <label class="text-[11px] text-slate-400">ভিডিও কোড (যেমন: v1, v2):</label>
-                    <input type="text" id="inp-vidcode" placeholder="v1" value="v1" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
-                </div>
                 <button onclick="addNewVideo()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-xs transition shadow-md mt-2">সংরক্ষণ করুন (Publish)</button>
                 
                 <hr class="border-slate-700 my-3">
@@ -130,26 +126,21 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // ব্যাকএন্ড রেন্ডার সার্ভার API লিংক
         const API_URL = "https://my-_ideo_bot.onrender.com";
 
-        // ডিফল্ট ভিডিও ডেটা
         let defaultVideos = [
             {
-                id: 1,
-                vidCode: "v1",
+                id: 1700000001,
                 parts: "2 Parts",
                 thumbnail: "https://files.catbox.moe/apifn2.jpeg",
                 caption: "সেই একটা মাল দুধ গুলোর দেখার মতন ভিডিও",
-                views: 1500, // রিয়েল কাউন্টের জন্য সংখ্যা রাখা হলো
+                views: 1500,
                 fileId: "BAACAgUAAyEFAAMBASF0UQADBGqmefvs9O-p30r2InMhLQmpVFMYAAKeJAACQ884VbmCjnrP1-kNPQQ",
                 adsterraUrl: "https://pl31154034.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e471f49615a9d36232"
             }
         ];
 
         let videosData = JSON.parse(localStorage.getItem('my_bot_videos')) || defaultVideos;
-
-        // ভিউ কাউন্ট রিয়েল-টাইম ট্র্যাক ডেটা লোড করা
         let videoViews = JSON.parse(localStorage.getItem('my_bot_views')) || {};
 
         function renderVideos() {
@@ -162,8 +153,7 @@
             }
 
             videosData.forEach(video => {
-                // রিয়েল ভিউ কাউন্ট হিসাব করা
-                let currentViews = videoViews[video.vidCode] || video.views || 1500;
+                let currentViews = videoViews[video.id] || video.views || 1500;
                 let formattedViews = currentViews > 1000 ? (currentViews / 1000).toFixed(1) + 'k' : currentViews;
 
                 const card = document.createElement('div');
@@ -200,11 +190,6 @@
         const ADMIN_TELEGRAM_ID = 8326665891; 
 
         function checkAdminAccess() {
-            let user = tg.initDataUnsafe && tg.initDataUnsafe.user;
-            if (!user || user.id !== ADMIN_TELEGRAM_ID) {
-                // টেস্টিংয়ের জন্য আইডি ম্যাচ না করলেও পপআপ ওপেন করার সুযোগ রাখতে চাইলে এখানে চেক সরাতে পারেন
-                // তবে সিকিউরিটির জন্য আপনার আইডি সেট করা আছে।
-            }
             document.getElementById('admin-modal').classList.remove('hidden');
             document.getElementById('admin-login-box').classList.remove('hidden');
             document.getElementById('admin-panel-box').classList.add('hidden');
@@ -225,21 +210,19 @@
             }
         }
 
-        // নতুন ভিডিও যোগ করে সরাসরি রেন্ডার সার্ভারের API-এ পাঠানোর ফাংশন
         async function addNewVideo() {
             let thumb = document.getElementById('inp-thumb').value;
             let caption = document.getElementById('inp-caption').value;
-            let fileId = document.getElementById('inp-videourl').value; // Telegram File ID
+            let fileId = document.getElementById('inp-videourl').value;
             let adUrl = document.getElementById('inp-adurl').value;
             let parts = document.getElementById('inp-parts').value;
-            let vidCode = document.getElementById('inp-vidcode').value || 'v1';
+            let videoId = Date.now(); // অটো ইউনিক আইডি জেনারেট হবে
 
-            if(!thumb || !fileId || !adUrl || !vidCode) {
-                alert("দয়া করে থাম্বনেইল লিংক, টেলিগ্রাম ফাইল আইডি, অ্যাডস্টেরা লিংক এবং ভিডিও কোড পূরণ করুন!");
+            if(!thumb || !fileId || !adUrl) {
+                alert("দয়া করে থাম্বনেইল লিংক, টেলিগ্রাম ফাইল আইডি এবং অ্যাডস্টেরা লিংক পূরণ করুন!");
                 return;
             }
 
-            // ১. রেন্ডার ব্যাকএন্ডে ডেটা পাঠানো (যাতে bot.py স্বয়ংক্রিয়ভাবে চিনতে পারে)
             try {
                 let response = await fetch(`${API_URL}/api/save-video`, {
                     method: 'POST',
@@ -247,7 +230,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        code: vidCode,
+                        id: videoId,
                         file_id: fileId,
                         caption: caption || "🔥 প্রিমিয়াম ভিডিও!",
                         ad_link: adUrl,
@@ -264,10 +247,8 @@
                 return;
             }
 
-            // ২. লোকাল মিনি অ্যাপে ভিডিও লিস্ট আপডেট করা
             let newVideo = {
-                id: Date.now(),
-                vidCode: vidCode,
+                id: videoId,
                 parts: parts,
                 thumbnail: thumb,
                 caption: caption || "নিউ ভাইরাল ভিডিও 💋",
@@ -280,7 +261,7 @@
             localStorage.setItem('my_bot_videos', JSON.stringify(videosData));
             renderVideos();
             closeAdminModal();
-            alert("সফলভাবে নতুন ভিডিও বটের ডেটাবেজে এবং মিনি অ্যাপে যুক্ত হয়েছে!");
+            alert("সফলভাবে নতুন ভিডিও যুক্ত হয়েছে!");
         }
 
         function clearAllVideos() {
@@ -297,7 +278,7 @@
             const modalContent = document.getElementById('modal-content');
             
             modalContent.innerHTML = `
-                <button onclick="startUnlock(${video.id}, '${video.adsterraUrl}', '${video.vidCode}')" id="unlock-btn-${video.id}" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded-xl flex items-center justify-between text-xs text-white transition">
+                <button onclick="startUnlock(${video.id}, '${video.adsterraUrl}')" id="unlock-btn-${video.id}" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded-xl flex items-center justify-between text-xs text-white transition">
                     <span class="flex items-center space-x-2">
                         <span>📥</span>
                         <span>Video Part [HD]</span>
@@ -312,21 +293,21 @@
             document.getElementById('unlock-modal').classList.add('hidden');
         }
 
-        // রিয়েল-টাইম ভিউ কাউন্ট এবং আনলক সিস্টেম
-        function startUnlock(id, adUrl, vidCode) {
-            // ইউজারের ক্লিক ট্র্যাক করে রিয়েল ভিউ ১ বাড়িয়ে দেওয়া
-            if (!videoViews[vidCode]) {
-                let baseViews = videosData.find(v => v.vidCode === vidCode)?.views || 1500;
-                videoViews[vidCode] = baseViews;
+        function startUnlock(id, adUrl) {
+            const video = videosData.find(v => v.id === id);
+            
+            // রিয়েল-টাইম ভিউ কাউন্ট বাড়ানো
+            if (!videoViews[id]) {
+                videoViews[id] = video.views || 1500;
             }
-            videoViews[vidCode]++;
+            videoViews[id]++;
             localStorage.setItem('my_bot_views', JSON.stringify(videoViews));
-            renderVideos(); // স্ক্রিনে লাইভ ভিউ আপডেট করা
+            renderVideos();
 
             window.open(adUrl, '_blank');
             const btn = document.getElementById(`unlock-btn-${id}`);
             btn.disabled = true;
-            let timeLeft = 10;
+            let timeLeft = 10; // ১০ সেকেন্ডের টাইমার
             
             let countdown = setInterval(() => {
                 timeLeft--;
@@ -337,7 +318,8 @@
                     document.getElementById('unlock-modal').classList.add('hidden');
                     
                     let botUsername = "my_video8_bot"; 
-                    document.getElementById('send-to-telegram-btn').href = `https://t.me/${botUsername}?start=${vidCode}`;
+                    // সরাসরি ভিডিও আইডি ধরে ইনবক্সে পাঠানোর লিংক তৈরি হবে
+                    document.getElementById('send-to-telegram-btn').href = `https://t.me/${botUsername}?start=${id}`;
                     
                     document.getElementById('success-modal').classList.remove('hidden');
                 }

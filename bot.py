@@ -1,6 +1,7 @@
 import os
 import json
 import threading
+import time
 import telebot
 from telebot import types
 from flask import Flask, request, jsonify
@@ -26,7 +27,6 @@ def save_db(data):
 def home():
     return "Bot and API are running and alive!"
 
-# সরাসরি file_id দিয়ে ডেটা সেভ করার API
 @app.route('/api/save-video', methods=['POST', 'OPTIONS'])
 def save_video():
     if request.method == 'OPTIONS':
@@ -38,8 +38,8 @@ def save_video():
 
     try:
         req_data = request.json
-        video_id = str(req_data.get("id"))  # ইউনিক আইডি বা টাইমস্ট্যাম্প
-        file_id = req_data.get("file_id") # টেলিগ্রাম ভিডিও file_id
+        video_id = str(req_data.get("id"))
+        file_id = req_data.get("file_id")
         caption = req_data.get("caption", "🔥 প্রিমিয়াম ভিডিও!")
         ad_link = req_data.get("ad_link", "")
         thumb_link = req_data.get("thumb_link", "")
@@ -70,7 +70,9 @@ def run_web():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-bot = telebot.TeleBot('8787602161:AAE_yFcsB2TiEY9LnlrVrF-Pom8ld5L8jCY')
+# নতুন টোকেন এখানে সেট করা হলো
+BOT_TOKEN = '8787602161:AAEnBbGJxxukqXjIdeBYjD7oWUzLkT9vbJY'
+bot = telebot.TeleBot(BOT_TOKEN)
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -112,7 +114,12 @@ def get_video_id(message):
 
 def run_bot():
     print("Bot is running...")
-    bot.infinity_polling()
+    while True:
+        try:
+            bot.infinity_polling(skip_pending=True, timeout=60, long_polling_timeout=30)
+        except Exception as e:
+            print(f"Polling error: {e}")
+            time.sleep(5)
 
 if __name__ == "__main__":
     web_thread = threading.Thread(target=run_web)

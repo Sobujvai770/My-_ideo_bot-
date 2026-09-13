@@ -4,11 +4,9 @@ import threading
 import telebot
 from telebot import types
 from flask import Flask, request, jsonify
-from flask_cors import CORS
 
-# ফ্লাস্ক সার্ভার এবং CORS ইনিশিয়ালাইজ করা (যাতে ওয়েব অ্যাপ থেকে রিকোয়েস্ট ব্লক না হয়)
+# ফ্লাস্ক সার্ভার ইনিশিয়ালাইজ করা
 app = Flask(__name__)
-CORS(app)
 
 DB_FILE = "videos.json"
 
@@ -31,9 +29,17 @@ def save_db(data):
 def home():
     return "Bot and API are running and alive!"
 
-# --- এডমিন প্যানেল থেকে ভিডিও সেভ করার API ---
-@app.route('/api/save-video', methods=['POST'])
+# --- এডমিন প্যানেল থেকে ভিডিও সেভ করার API (CORS হেডারসহ) ---
+@app.route('/api/save-video', methods=['POST', 'OPTIONS'])
 def save_video():
+    if request.method == 'OPTIONS':
+        # ব্রাউজারের প্রি-ফ্লাইট রিকোয়েস্ট হ্যান্ডেল করার জন্য
+        response = jsonify({'status': 'OK'})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST")
+        return response
+
     try:
         req_data = request.json
         v_code = req_data.get("code")  # যেমন: v1, v2
@@ -43,7 +49,9 @@ def save_video():
         thumb_link = req_data.get("thumb_link", "")
 
         if not v_code or not file_id:
-            return jsonify({"status": "error", "message": "Code and File ID are required!"}), 400
+            res = jsonify({"status": "error", "message": "Code and File ID are required!"})
+            res.headers.add("Access-Control-Allow-Origin", "*")
+            return res, 400
 
         db = load_db()
         db[v_code] = {
@@ -54,9 +62,13 @@ def save_video():
         }
         save_db(db)
 
-        return jsonify({"status": "success", "message": f"Video {v_code} saved successfully!"})
+        res = jsonify({"status": "success", "message": f"Video {v_code} saved successfully!"})
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 200
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        res = jsonify({"status": "error", "message": str(e)})
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 500
 
 def run_web():
     port = int(os.environ.get("PORT", 10000))
@@ -76,7 +88,6 @@ def send_welcome(message):
             v_data = db[vid_code]
             
             markup = types.InlineKeyboardMarkup()
-            # যদি অ্যাডস্টেরা লিংক থাকে, তবে সেটা বাটনে যুক্ত হবে
             if v_data.get("ad_link"):
                 markup.row(types.InlineKeyboardButton("🎬 Watch Full Video / Sponsor", url=v_data["ad_link"]))
             

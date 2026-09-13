@@ -116,9 +116,9 @@
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4 font-bold">✓</div>
             <h3 class="font-bold text-lg text-slate-800 mb-2">আনলক সম্পন্ন হয়েছে!</h3>
             <p class="text-xs text-slate-600 mb-6 leading-relaxed">নিচের বাটনটি ক্লিক করলে ভিডিওটি সরাসরি আপনার টেলিগ্রাম ইনবক্সে চলে যাবে।</p>
-            <a id="send-to-telegram-btn" href="#" target="_blank" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-2xl text-sm transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/30">
+            <button onclick="sendToTelegramInbox()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-2xl text-sm transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/30">
                 <span>📥 ইনবক্সে পাঠান</span>
-            </a>
+            </button>
         </div>
     </div>
 
@@ -126,8 +126,8 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // সঠিক রেন্ডার সার্ভার API লিংক
         const API_URL = "https://my-ideo-bot.onrender.com";
+        const BOT_USERNAME = "my_video8_bot"; // আপনার বটের ইউজারনেম
 
         let defaultVideos = [
             {
@@ -135,7 +135,7 @@
                 parts: "2 Parts",
                 thumbnail: "https://files.catbox.moe/apifn2.jpeg",
                 caption: "সেই একটা মাল দুধ গুলোর দেখার মতন ভিডিও",
-                views: 1500,
+                views: 125,
                 fileId: "BAACAgUAAyEFAAMBASF0UQADBGqmefvs9O-p30r2InMhLQmpVFMYAAKeJAACQ884VbmCjnrP1-kNPQQ",
                 adsterraUrl: "https://pl31154034.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e471f49615a9d36232"
             }
@@ -143,6 +143,7 @@
 
         let videosData = JSON.parse(localStorage.getItem('my_bot_videos')) || defaultVideos;
         let videoViews = JSON.parse(localStorage.getItem('my_bot_views')) || {};
+        let currentUnlockedVideoId = null;
 
         function renderVideos() {
             const container = document.getElementById('video-container');
@@ -154,8 +155,11 @@
             }
 
             videosData.forEach(video => {
-                let currentViews = videoViews[video.id] || video.views || 1500;
-                let formattedViews = currentViews > 1000 ? (currentViews / 1000).toFixed(1) + 'k' : currentViews;
+                // রিয়েল ভিউ কাউন্ট হ্যান্ডেলিং
+                let baseViews = video.views || 125;
+                let extraViews = videoViews[video.id] || 0;
+                let totalViews = baseViews + extraViews;
+                let formattedViews = totalViews > 1000 ? (totalViews / 1000).toFixed(1) + 'k' : totalViews;
 
                 const card = document.createElement('div');
                 card.className = "rainbow-border shadow-xl";
@@ -187,8 +191,6 @@
         }
 
         renderVideos();
-
-        const ADMIN_TELEGRAM_ID = 8326665891; 
 
         function checkAdminAccess() {
             document.getElementById('admin-modal').classList.remove('hidden');
@@ -227,9 +229,7 @@
             try {
                 let response = await fetch(`${API_URL}/api/save-video`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         id: videoId,
                         file_id: fileId,
@@ -253,7 +253,7 @@
                 parts: parts,
                 thumbnail: thumb,
                 caption: caption || "নিউ ভাইরাল ভিডিও 💋",
-                views: 1500,
+                views: Math.floor(Math.random() * 200) + 80,
                 fileId: fileId,
                 adsterraUrl: adUrl
             };
@@ -295,10 +295,11 @@
         }
 
         function startUnlock(id, adUrl) {
-            const video = videosData.find(v => v.id === id);
+            currentUnlockedVideoId = id;
             
+            // রিয়েল ভিউ এক বৃদ্ধি করা
             if (!videoViews[id]) {
-                videoViews[id] = video.views || 1500;
+                videoViews[id] = 0;
             }
             videoViews[id]++;
             localStorage.setItem('my_bot_views', JSON.stringify(videoViews));
@@ -316,13 +317,22 @@
                 if (timeLeft <= 0) {
                     clearInterval(countdown);
                     document.getElementById('unlock-modal').classList.add('hidden');
-                    
-                    let botUsername = "my_video8_bot"; 
-                    document.getElementById('send-to-telegram-btn').href = `https://t.me/${botUsername}?start=${id}`;
-                    
                     document.getElementById('success-modal').classList.remove('hidden');
                 }
             }, 1000);
+        }
+
+        // সরাসরি টেলিগ্রাম ইনবক্সে ওপেন করার ফাংশন (পেজ বন্ধ হয়ে সরাসরি বটে যাবে)
+        function sendToTelegramInbox() {
+            if (!currentUnlockedVideoId) return;
+            let targetUrl = `https://t.me/${BOT_USERNAME}?start=${currentUnlockedVideoId}`;
+            
+            if (tg && tg.openTelegramLink) {
+                tg.openTelegramLink(targetUrl);
+                tg.close();
+            } else {
+                window.location.href = targetUrl;
+            }
         }
 
         window.addEventListener('load', function() {

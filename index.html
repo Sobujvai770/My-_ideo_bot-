@@ -126,7 +126,8 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        const API_URL = "https://my-_ideo_bot.onrender.com";
+        // সঠিক রেন্ডার সার্ভার API লিংক
+        const API_URL = "https://my-ideo-bot.onrender.com";
 
         let defaultVideos = [
             {
@@ -216,7 +217,7 @@
             let fileId = document.getElementById('inp-videourl').value;
             let adUrl = document.getElementById('inp-adurl').value;
             let parts = document.getElementById('inp-parts').value;
-            let videoId = Date.now(); // অটো ইউনিক আইডি জেনারেট হবে
+            let videoId = Date.now();
 
             if(!thumb || !fileId || !adUrl) {
                 alert("দয়া করে থাম্বনেইল লিংক, টেলিগ্রাম ফাইল আইডি এবং অ্যাডস্টেরা লিংক পূরণ করুন!");
@@ -296,7 +297,6 @@
         function startUnlock(id, adUrl) {
             const video = videosData.find(v => v.id === id);
             
-            // রিয়েল-টাইম ভিউ কাউন্ট বাড়ানো
             if (!videoViews[id]) {
                 videoViews[id] = video.views || 1500;
             }
@@ -307,7 +307,7 @@
             window.open(adUrl, '_blank');
             const btn = document.getElementById(`unlock-btn-${id}`);
             btn.disabled = true;
-            let timeLeft = 10; // ১০ সেকেন্ডের টাইমার
+            let timeLeft = 10;
             
             let countdown = setInterval(() => {
                 timeLeft--;
@@ -318,7 +318,6 @@
                     document.getElementById('unlock-modal').classList.add('hidden');
                     
                     let botUsername = "my_video8_bot"; 
-                    // সরাসরি ভিডিও আইডি ধরে ইনবক্সে পাঠানোর লিংক তৈরি হবে
                     document.getElementById('send-to-telegram-btn').href = `https://t.me/${botUsername}?start=${id}`;
                     
                     document.getElementById('success-modal').classList.remove('hidden');

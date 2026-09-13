@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VAIRAL VIDEO</title>
+    <title>My Video Bot</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -16,18 +16,16 @@
 </head>
 <body class="bg-[#0f172a] text-white min-h-screen font-sans">
 
-    <!-- ওপরের হেডার বার -->
+    <!-- ওপরের হেডার বার (লোগো ও প্রোফাইল পিকচারসহ) -->
     <header class="flex items-center justify-between px-4 py-3 bg-[#1e293b] border-b border-slate-800 sticky top-0 z-50">
         <div class="flex items-center space-x-2">
-            <span class="text-xl">🔥</span>
-            <h1 class="font-bold text-lg text-orange-500">VAIRAL VIDEO</h1>
+            <!-- আপনার প্রোফাইল পিকচারের লিংক এখানে দিতে পারেন -->
+            <img src="https://files.catbox.moe/apifn2.jpeg" class="w-8 h-8 rounded-full object-cover border border-orange-500">
+            <h1 class="font-bold text-lg text-orange-500">My Video Bot</h1>
         </div>
-        <button class="text-slate-400 hover:text-white">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-        </button>
+        <div class="flex items-center space-x-2">
+            <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full font-medium">Online 🟢</span>
+        </div>
     </header>
 
     <!-- মূল কন্টেইনার (যেখানে ভিডিওগুলো ডায়নামিকভাবে লোড হবে) -->
@@ -53,17 +51,6 @@
                 videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
                 adsterraUrl: "https://pl31154034.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e471f49615a9d36232"
             }
-            // আরেকটি ভিডিও যোগ করতে চাইলে ওটার মতো নিচে কমা দিয়ে ব্র্যাকেট দিন:
-            /*
-            {
-                id: 2,
-                thumbnail: "ছবির_লিংক",
-                caption: "ভিডিওর_ক্যাপশন",
-                views: "1.5k",
-                videoUrl: "ভিডিওর_লিংক",
-                adsterraUrl: "অ্যাডস্টেরা_লিংক"
-            }
-            */
         ];
 
         const container = document.getElementById('video-container');

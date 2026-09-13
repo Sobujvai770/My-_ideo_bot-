@@ -16,10 +16,8 @@
 </head>
 <body class="bg-[#0f172a] text-white min-h-screen font-sans">
 
-    <!-- ওপরের হেডার বার (লোগো ও প্রোফাইল পিকচারসহ) -->
     <header class="flex items-center justify-between px-4 py-3 bg-[#1e293b] border-b border-slate-800 sticky top-0 z-50">
         <div class="flex items-center space-x-2">
-            <!-- আপনার প্রোফাইল পিকচারের লিংক এখানে দিতে পারেন -->
             <img src="https://files.catbox.moe/apifn2.jpeg" class="w-8 h-8 rounded-full object-cover border border-orange-500">
             <h1 class="font-bold text-lg text-orange-500">My Video Bot</h1>
         </div>
@@ -28,7 +26,6 @@
         </div>
     </header>
 
-    <!-- মূল কন্টেইনার (যেখানে ভিডিওগুলো ডায়নামিকভাবে লোড হবে) -->
     <main id="video-container" class="p-4 max-w-md mx-auto space-y-4">
         <div class="flex items-center space-x-1 text-yellow-400 font-semibold text-sm">
             <span>⚡</span>
@@ -36,7 +33,6 @@
         </div>
     </main>
 
-    <!-- জাভাস্ক্রিপ্ট লজিক -->
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
@@ -51,6 +47,17 @@
                 videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
                 adsterraUrl: "https://pl31154034.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e471f49615a9d36232"
             }
+            // 👉 আরেকটি নতুন ভিডিও যোগ করতে চাইলে আগের ব্র্যাকেটের পর ( } ) একটি কমা ( , ) দিয়ে নিচে এভাবে বসাবেন:
+            /*
+            ,{
+                id: 2,
+                thumbnail: "ছবির_লিংক_এখানে",
+                caption: "ভিডিওর_ক্যাপশন_এখানে",
+                views: "1.5k",
+                videoUrl: "ভিডিওর_mp4_লিংক_এখানে",
+                adsterraUrl: "অ্যাডস্টেরা_লিংক_এখানে"
+            }
+            */
         ];
 
         const container = document.getElementById('video-container');

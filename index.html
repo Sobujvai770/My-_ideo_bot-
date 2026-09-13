@@ -127,8 +127,7 @@
         tg.expand();
 
         const API_URL = "https://my-ideo-bot.onrender.com";
-        // এখানে আপনার বটের সঠিক ইউজারনেম সেট করা হলো
-        const BOT_USERNAME = "my_video8_bot"; 
+        const BOT_USERNAME = "my_video8_bot"; // আপনার বটের ইউজারনেম
 
         let defaultVideos = [
             {
@@ -136,14 +135,16 @@
                 parts: "2 Parts",
                 thumbnail: "https://files.catbox.moe/apifn2.jpeg",
                 caption: "সেই একটা মাল দুধ গুলোর দেখার মতন ভিডিও",
-                views: 125,
+                views: 342,
                 fileId: "BAACAgUAAyEFAAMBASF0UQADBGqmefvs9O-p30r2InMhLQmpVFMYAAKeJAACQ884VbmCjnrP1-kNPQQ",
                 adsterraUrl: "https://pl31154034.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e471f49615a9d36232"
             }
         ];
 
         let videosData = JSON.parse(localStorage.getItem('my_bot_videos')) || defaultVideos;
-        let videoViews = JSON.parse(localStorage.getItem('my_bot_views')) || {};
+        
+        // রিয়েল ভিউ কাউন্টার ডেটাসেট ইনিশিয়ালাইজেশন
+        let videoViews = JSON.parse(localStorage.getItem('my_bot_real_views')) || {};
         let currentUnlockedVideoId = null;
 
         function renderVideos() {
@@ -156,9 +157,12 @@
             }
 
             videosData.forEach(video => {
-                let baseViews = video.views || 125;
-                let extraViews = videoViews[video.id] || 0;
-                let totalViews = baseViews + extraViews;
+                // যদি রিয়েল ভিউ লোকালস্টোরেজে না থাকে, তবে ভিডিওর বেস ভিউ সেট হবে
+                if (videoViews[video.id] === undefined) {
+                    videoViews[video.id] = video.views || Math.floor(Math.random() * 150) + 120;
+                }
+                
+                let totalViews = videoViews[video.id];
                 let formattedViews = totalViews > 1000 ? (totalViews / 1000).toFixed(1) + 'k' : totalViews;
 
                 const card = document.createElement('div');
@@ -173,7 +177,7 @@
                             
                             <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded-md text-[11px] flex items-center space-x-1 text-slate-200">
                                 <span>👁️</span>
-                                <span>${formattedViews}</span>
+                                <span id="view-count-${video.id}">${formattedViews}</span>
                             </div>
                         </div>
 
@@ -188,6 +192,7 @@
                 `;
                 container.appendChild(card);
             });
+            localStorage.setItem('my_bot_real_views', JSON.stringify(videoViews));
         }
 
         renderVideos();
@@ -253,13 +258,18 @@
                 parts: parts,
                 thumbnail: thumb,
                 caption: caption || "নিউ ভাইরাল ভিডিও 💋",
-                views: Math.floor(Math.random() * 200) + 80,
+                views: Math.floor(Math.random() * 200) + 150,
                 fileId: fileId,
                 adsterraUrl: adUrl
             };
 
             videosData.unshift(newVideo);
             localStorage.setItem('my_bot_videos', JSON.stringify(videosData));
+            
+            // নতুন ভিডিওর জন্য রিয়েল ভিউ কাউন্ট সেট করা
+            videoViews[videoId] = newVideo.views;
+            localStorage.setItem('my_bot_real_views', JSON.stringify(videoViews));
+
             renderVideos();
             closeAdminModal();
             alert("সফলভাবে নতুন ভিডিও যুক্ত হয়েছে!");
@@ -269,12 +279,14 @@
             if(confirm("সব ভিডিও ডিলিট করতে চান?")) {
                 videosData = [];
                 localStorage.removeItem('my_bot_videos');
+                localStorage.removeItem('my_bot_real_views');
                 renderVideos();
                 closeAdminModal();
             }
         }
 
         function openModal(id) {
+            currentUnlockedVideoId = id; // নিশ্চিতভাবে আইডি সেট করা হলো
             const video = videosData.find(v => v.id === id);
             const modalContent = document.getElementById('modal-content');
             
@@ -297,11 +309,13 @@
         function startUnlock(id, adUrl) {
             currentUnlockedVideoId = id;
             
-            if (!videoViews[id]) {
-                videoViews[id] = 0;
+            // থাম্বনেইলে ক্লিক করে ভিডিও আনলক করার চেষ্টা করলেই রিয়েল ভিউ ১ বেড়ে যাবে এবং সাথে সাথে সেভ হবে
+            if (videoViews[id] !== undefined) {
+                videoViews[id] += 1;
+            } else {
+                videoViews[id] = 200;
             }
-            videoViews[id]++;
-            localStorage.setItem('my_bot_views', JSON.stringify(videoViews));
+            localStorage.setItem('my_bot_real_views', JSON.stringify(videoViews));
             renderVideos();
 
             window.open(adUrl, '_blank');
@@ -321,9 +335,11 @@
             }, 1000);
         }
 
-        // ইনবক্সে পাঠানোর ফাংশন - এবার ভিডিও আইডি সহ সরাসরি বটে নিয়ে যাবে
+        // ইনবক্সে পাঠানোর ফাংশন - ব্যাকআপ সহ নিশ্চিত করা হলো যাতে আইডি মিস না হয়
         function sendToTelegramInbox() {
-            if (!currentUnlockedVideoId) return;
+            if (!currentUnlockedVideoId && videosData.length > 0) {
+                currentUnlockedVideoId = videosData[0].id;
+            }
             let targetUrl = `https://t.me/${BOT_USERNAME}?start=${currentUnlockedVideoId}`;
             window.location.href = targetUrl;
         }

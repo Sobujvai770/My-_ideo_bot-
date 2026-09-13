@@ -127,7 +127,7 @@
         tg.expand();
 
         const API_URL = "https://my-ideo-bot.onrender.com";
-        const BOT_USERNAME = "my_video8_bot"; // আপনার বটের ইউজারনেম
+        const BOT_USERNAME = "my_video8_bot"; // আপনার টেলিগ্রাম বটের ইউজারনেম
 
         let defaultVideos = [
             {
@@ -142,8 +142,6 @@
         ];
 
         let videosData = JSON.parse(localStorage.getItem('my_bot_videos')) || defaultVideos;
-        
-        // রিয়েল ভিউ কাউন্টার ডেটাসেট ইনিশিয়ালাইজেশন
         let videoViews = JSON.parse(localStorage.getItem('my_bot_real_views')) || {};
         let currentUnlockedVideoId = null;
 
@@ -157,7 +155,6 @@
             }
 
             videosData.forEach(video => {
-                // যদি রিয়েল ভিউ লোকালস্টোরেজে না থাকে, তবে ভিডিওর বেস ভিউ সেট হবে
                 if (videoViews[video.id] === undefined) {
                     videoViews[video.id] = video.views || Math.floor(Math.random() * 150) + 120;
                 }
@@ -177,7 +174,7 @@
                             
                             <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded-md text-[11px] flex items-center space-x-1 text-slate-200">
                                 <span>👁️</span>
-                                <span id="view-count-${video.id}">${formattedViews}</span>
+                                <span>${formattedViews}</span>
                             </div>
                         </div>
 
@@ -266,7 +263,6 @@
             videosData.unshift(newVideo);
             localStorage.setItem('my_bot_videos', JSON.stringify(videosData));
             
-            // নতুন ভিডিওর জন্য রিয়েল ভিউ কাউন্ট সেট করা
             videoViews[videoId] = newVideo.views;
             localStorage.setItem('my_bot_real_views', JSON.stringify(videoViews));
 
@@ -286,7 +282,17 @@
         }
 
         function openModal(id) {
-            currentUnlockedVideoId = id; // নিশ্চিতভাবে আইডি সেট করা হলো
+            // কার্ডে ক্লিক করার সাথেই সঠিক আইডি সেট করা হলো এবং ভিউ কাউন্ট রিয়েল-টাইমে বাড়িয়ে সেভ করা হলো
+            currentUnlockedVideoId = id;
+            
+            if (videoViews[id] !== undefined) {
+                videoViews[id] += 1;
+            } else {
+                videoViews[id] = 200;
+            }
+            localStorage.setItem('my_bot_real_views', JSON.stringify(videoViews));
+            renderVideos();
+
             const video = videosData.find(v => v.id === id);
             const modalContent = document.getElementById('modal-content');
             
@@ -308,17 +314,8 @@
 
         function startUnlock(id, adUrl) {
             currentUnlockedVideoId = id;
-            
-            // থাম্বনেইলে ক্লিক করে ভিডিও আনলক করার চেষ্টা করলেই রিয়েল ভিউ ১ বেড়ে যাবে এবং সাথে সাথে সেভ হবে
-            if (videoViews[id] !== undefined) {
-                videoViews[id] += 1;
-            } else {
-                videoViews[id] = 200;
-            }
-            localStorage.setItem('my_bot_real_views', JSON.stringify(videoViews));
-            renderVideos();
-
             window.open(adUrl, '_blank');
+            
             const btn = document.getElementById(`unlock-btn-${id}`);
             btn.disabled = true;
             let timeLeft = 10;
@@ -335,13 +332,21 @@
             }, 1000);
         }
 
-        // ইনবক্সে পাঠানোর ফাংশন - ব্যাকআপ সহ নিশ্চিত করা হলো যাতে আইডি মিস না হয়
+        // ইনবক্সে পাঠানোর মূল ফাংশন (টেলিগ্রামের নিজস্ব ওপেন লিংকের মাধ্যমে বট ইনবক্সে রিডাইরেক্ট করবে)
         function sendToTelegramInbox() {
             if (!currentUnlockedVideoId && videosData.length > 0) {
                 currentUnlockedVideoId = videosData[0].id;
             }
+            
             let targetUrl = `https://t.me/${BOT_USERNAME}?start=${currentUnlockedVideoId}`;
-            window.location.href = targetUrl;
+            
+            // টেলিগ্রাম মিনি অ্যাপ থেকে সরাসরি চ্যাটে বা ইনবক্সে পাঠানোর অফিশিয়াল মেথড
+            if (tg && tg.openTelegramLink) {
+                tg.openTelegramLink(targetUrl);
+                tg.close(); // মিনি অ্যাপ বন্ধ করে ইনবক্সে নিয়ে যাবে
+            } else {
+                window.location.href = targetUrl;
+            }
         }
 
         window.addEventListener('load', function() {

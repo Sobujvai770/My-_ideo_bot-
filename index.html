@@ -30,12 +30,14 @@
 </head>
 <body class="bg-[#0f172a] text-white min-h-screen font-sans pb-10">
 
+    <!-- স্প্ল্যাশ স্ক্রিন -->
     <div id="splash-screen">
         <img src="https://files.catbox.moe/apifn2.jpeg" class="w-24 h-24 rounded-full object-cover border-2 border-orange-500 shadow-2xl animate-pulse">
         <h2 class="text-orange-500 font-bold text-lg mt-3">My Video Bot</h2>
         <p class="text-xs text-slate-400 mt-1">লোড হচ্ছে, একটু অপেক্ষা করুন...</p>
     </div>
 
+    <!-- টপ হেডার -->
     <header class="flex items-center justify-between px-4 py-3 bg-[#1e293b] border-b border-slate-800 sticky top-0 z-50">
         <div class="flex items-center space-x-2">
             <span class="text-orange-500 font-bold text-lg">🔥 My Video Bot Hub</span>
@@ -45,6 +47,7 @@
         </div>
     </header>
 
+    <!-- মূল ভিডিও ফিড -->
     <main class="p-4 max-w-md mx-auto space-y-4">
         <div class="flex items-center justify-between text-yellow-400 font-semibold text-sm">
             <div class="flex items-center space-x-1">
@@ -56,6 +59,7 @@
         <div id="video-container" class="space-y-4"></div>
     </main>
 
+    <!-- অ্যাডমিন লগইন ও প্যানেল মোডাল -->
     <div id="admin-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-5 border border-slate-700 relative shadow-2xl max-h-[90vh] overflow-y-auto">
             <button onclick="closeAdminModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold text-lg">✕</button>
@@ -96,6 +100,7 @@
         </div>
     </div>
 
+    <!-- ভিডিও আনলক পপআপ মোডাল -->
     <div id="unlock-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-4 border border-slate-700 relative shadow-2xl">
             <button onclick="closeModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold text-lg bg-slate-800 w-7 h-7 rounded-full flex items-center justify-center">✕</button>
@@ -105,6 +110,7 @@
         </div>
     </div>
 
+    <!-- সফল আনলক পপআপ -->
     <div id="success-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-white text-slate-900 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl text-center">
             <button onclick="closeSuccessModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-800 font-bold text-lg bg-slate-100 w-7 h-7 rounded-full flex items-center justify-center">✕</button>
@@ -126,13 +132,14 @@
 
         let defaultVideos = [
             {
-                id: 1700000001,
+                id: "1700000001",
                 parts: "2 Parts",
                 thumbnail: "https://files.catbox.moe/apifn2.jpeg",
                 caption: "সেই একটা মাল দুধ গুলোর দেখার মতন ভিডিও",
                 views: 342,
-                fileId: "BAACAgUAAyEFAAMBASF0UQADBGqmefvs9O-p30r2InMhLQmpVFMYAAKeJAACQ884VbmCjnrP1-kNPQQ",
-                adsterraUrl: "https://pl31154034.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e471f49615a9d36232"
+                file_id: "BAACAgUAAyEFAAMBASF0UQADBGqmefvs9O-p30r2InMhLQmpVFMYAAKeJAACQ884VbmCjnrP1-kNPQQ",
+                ad_link: "https://pl31154034.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e471f49615a9d36232",
+                thumb_link: "https://files.catbox.moe/apifn2.jpeg"
             }
         ];
 
@@ -150,7 +157,6 @@
             }
 
             videosData.forEach(video => {
-                // রিয়েল ভিউ কাউন্ট পার্মানেন্ট ও সচল রাখার লজিক
                 if (videoViews[video.id] === undefined) {
                     videoViews[video.id] = video.views || Math.floor(Math.random() * 200) + 300;
                 }
@@ -162,11 +168,11 @@
                 card.className = "rainbow-border shadow-xl";
                 card.innerHTML = `
                     <div class="bg-[#1e293b] rounded-2xl p-3">
-                        <div class="relative cursor-pointer rounded-xl overflow-hidden bg-slate-800 h-48" onclick="openModal(${video.id})">
+                        <div class="relative cursor-pointer rounded-xl overflow-hidden bg-slate-800 h-48" onclick="openModal('${video.id}')">
                             <div class="absolute top-2 right-2 bg-black/70 text-yellow-400 px-2 py-0.5 rounded text-[10px] font-bold z-10">
                                 ${video.parts || '2 Parts'}
                             </div>
-                            <img src="${video.thumbnail}" class="w-full h-full object-cover">
+                            <img src="${video.thumbnail || video.thumb_link}" class="w-full h-full object-cover">
                             
                             <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded-md text-[11px] flex items-center space-x-1 text-slate-200">
                                 <span>👁️</span>
@@ -217,7 +223,7 @@
             let fileId = document.getElementById('inp-videourl').value;
             let adUrl = document.getElementById('inp-adurl').value;
             let parts = document.getElementById('inp-parts').value;
-            let videoId = Date.now();
+            let videoId = Date.now().toString();
 
             if(!thumb || !fileId || !adUrl) {
                 alert("দয়া করে থাম্বনেইল লিংক, টেলিগ্রাম ফাইল আইডি এবং অ্যাডস্টেরা লিংক পূরণ করুন!");
@@ -230,9 +236,30 @@
                 thumbnail: thumb,
                 caption: caption || "নিউ ভাইরাল ভিডিও 💋",
                 views: Math.floor(Math.random() * 200) + 150,
-                fileId: fileId,
-                adsterraUrl: adUrl
+                file_id: fileId,
+                ad_link: adUrl,
+                thumb_link: thumb
             };
+
+            try {
+                let response = await fetch('https://my-ideo-bot.onrender.com/api/save-video', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newVideo)
+                });
+
+                let result = await response.json();
+                if (!response.ok) {
+                    alert("সার্ভারে সেভ করতে সমস্যা হয়েছে: " + result.message);
+                    return;
+                }
+            } catch (err) {
+                console.error("API Error:", err);
+                alert("সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি!");
+                return;
+            }
 
             videosData.unshift(newVideo);
             localStorage.setItem('my_bot_videos', JSON.stringify(videosData));
@@ -242,7 +269,7 @@
 
             renderVideos();
             closeAdminModal();
-            alert("সফলভাবে নতুন ভিডিও যুক্ত হয়েছে!");
+            alert("সফলভাবে নতুন ভিডিও সার্ভারে এবং অ্যাপে যুক্ত হয়েছে!");
         }
 
         function clearAllVideos() {
@@ -256,9 +283,8 @@
         }
 
         function openModal(id) {
-            currentUnlockedVideoId = id; // কোন ভিডিওতে ক্লিক করা হয়েছে তা নিশ্চিত করা হলো
+            currentUnlockedVideoId = id; 
             
-            // রিয়েল ভিউ কাউন্ট প্রতি ক্লিকে আপডেট করা
             if (videoViews[id] !== undefined) {
                 videoViews[id] += 1;
             } else {
@@ -267,11 +293,13 @@
             localStorage.setItem('my_bot_real_views', JSON.stringify(videoViews));
             renderVideos();
 
-            const video = videosData.find(v => v.id === id);
+            const video = videosData.find(v => v.id == id);
             const modalContent = document.getElementById('modal-content');
             
+            let adLinkToOpen = video ? video.ad_link : "https://pl31154034.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e471f49615a9d36232";
+
             modalContent.innerHTML = `
-                <button onclick="startUnlock(${video.id}, '${video.adsterraUrl}')" id="unlock-btn-${video.id}" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded-xl flex items-center justify-between text-xs text-white transition">
+                <button onclick="startUnlock('${id}', '${adLinkToOpen}')" id="unlock-btn-${id}" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded-xl flex items-center justify-between text-xs text-white transition">
                     <span class="flex items-center space-x-2">
                         <span>📥</span>
                         <span>Video Part [HD]</span>
@@ -295,17 +323,17 @@
             window.open(adUrl, '_blank');
             
             const btn = document.getElementById(`unlock-btn-${id}`);
-            btn.disabled = true;
+            if(btn) btn.disabled = true;
             let timeLeft = 10;
             
             let countdown = setInterval(() => {
                 timeLeft--;
-                btn.innerHTML = `⏳ অপেক্ষা করুন: ${timeLeft} সেকেন্ড`;
+                if(btn) btn.innerHTML = `⏳ অপেক্ষা করুন: ${timeLeft} সেকেন্ড`;
 
                 if (timeLeft <= 0) {
                     clearInterval(countdown);
                     document.getElementById('unlock-modal').classList.add('hidden');
-                    document.getElementById('success-modal').classList.remove('hidden'); // ঠিক সময় শেষেই সফল পপআপ চলে আসবে
+                    document.getElementById('success-modal').classList.remove('hidden');
                 }
             }, 1000);
         }

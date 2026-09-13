@@ -5,12 +5,10 @@ import telebot
 from telebot import types
 from flask import Flask, request, jsonify
 
-# ফ্লাস্ক সার্ভার ইনিশিয়ালাইজ করা
 app = Flask(__name__)
 
 DB_FILE = "videos.json"
 
-# ডেটাবেজ লোড করার ফাংশন
 def load_db():
     if os.path.exists(DB_FILE):
         with open(DB_FILE, "r", encoding="utf-8") as f:
@@ -20,7 +18,6 @@ def load_db():
                 return {}
     return {}
 
-# ডেটাবেজ সেভ করার ফাংশন
 def save_db(data):
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
@@ -29,11 +26,10 @@ def save_db(data):
 def home():
     return "Bot and API are running and alive!"
 
-# --- এডমিন প্যানেল থেকে ভিডিও সেভ করার API (CORS হেডারসহ) ---
+# সরাসরি file_id দিয়ে ডেটা সেভ করার API
 @app.route('/api/save-video', methods=['POST', 'OPTIONS'])
 def save_video():
     if request.method == 'OPTIONS':
-        # ব্রাউজারের প্রি-ফ্লাইট রিকোয়েস্ট হ্যান্ডেল করার জন্য
         response = jsonify({'status': 'OK'})
         response.headers.add("Access-Control-Allow-Origin", "*")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type")
@@ -42,19 +38,19 @@ def save_video():
 
     try:
         req_data = request.json
-        v_code = req_data.get("code")  # যেমন: v1, v2
+        video_id = str(req_data.get("id"))  # ইউনিক আইডি বা টাইমস্ট্যাম্প
         file_id = req_data.get("file_id") # টেলিগ্রাম ভিডিও file_id
         caption = req_data.get("caption", "🔥 প্রিমিয়াম ভিডিও!")
         ad_link = req_data.get("ad_link", "")
         thumb_link = req_data.get("thumb_link", "")
 
-        if not v_code or not file_id:
-            res = jsonify({"status": "error", "message": "Code and File ID are required!"})
+        if not video_id or not file_id:
+            res = jsonify({"status": "error", "message": "Video ID and File ID are required!"})
             res.headers.add("Access-Control-Allow-Origin", "*")
             return res, 400
 
         db = load_db()
-        db[v_code] = {
+        db[video_id] = {
             "video_file_id": file_id,
             "caption": caption,
             "ad_link": ad_link,
@@ -62,7 +58,7 @@ def save_video():
         }
         save_db(db)
 
-        res = jsonify({"status": "success", "message": f"Video {v_code} saved successfully!"})
+        res = jsonify({"status": "success", "message": "Video saved successfully!"})
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 200
     except Exception as e:
@@ -74,7 +70,6 @@ def run_web():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-# আপনার বটের টেলিগ্রাম টোকেন
 bot = telebot.TeleBot('8787602161:AAE_yFcsB2TiEY9LnlrVrF-Pom8ld5L8jCY')
 
 @bot.message_handler(commands=['start'])
@@ -83,9 +78,9 @@ def send_welcome(message):
     db = load_db()
     
     if len(command_args) > 1:
-        vid_code = command_args[1]
-        if vid_code in db:
-            v_data = db[vid_code]
+        vid_key = command_args[1]
+        if vid_key in db:
+            v_data = db[vid_key]
             
             markup = types.InlineKeyboardMarkup()
             if v_data.get("ad_link"):
@@ -123,4 +118,4 @@ if __name__ == "__main__":
     web_thread = threading.Thread(target=run_web)
     web_thread.start()
     
-    run_bot() 
+    run_bot()

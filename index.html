@@ -30,14 +30,12 @@
 </head>
 <body class="bg-[#0f172a] text-white min-h-screen font-sans pb-10">
 
-    <!-- স্প্ল্যাশ স্ক্রিন -->
     <div id="splash-screen">
         <img src="https://files.catbox.moe/apifn2.jpeg" class="w-24 h-24 rounded-full object-cover border-2 border-orange-500 shadow-2xl animate-pulse">
         <h2 class="text-orange-500 font-bold text-lg mt-3">My Video Bot</h2>
         <p class="text-xs text-slate-400 mt-1">লোড হচ্ছে, একটু অপেক্ষা করুন...</p>
     </div>
 
-    <!-- টপ হেডার -->
     <header class="flex items-center justify-between px-4 py-3 bg-[#1e293b] border-b border-slate-800 sticky top-0 z-50">
         <div class="flex items-center space-x-2">
             <span class="text-orange-500 font-bold text-lg">🔥 My Video Bot Hub</span>
@@ -47,7 +45,6 @@
         </div>
     </header>
 
-    <!-- মূল ভিডিও ফিড -->
     <main class="p-4 max-w-md mx-auto space-y-4">
         <div class="flex items-center justify-between text-yellow-400 font-semibold text-sm">
             <div class="flex items-center space-x-1">
@@ -59,10 +56,9 @@
         <div id="video-container" class="space-y-4"></div>
     </main>
 
-    <!-- অ্যাডমিন লগইন ও প্যানেল মোডাল -->
     <div id="admin-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-5 border border-slate-700 relative shadow-2xl max-h-[90vh] overflow-y-auto">
-            <button onclick="closeAdminModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold">✕</button>
+            <button onclick="closeAdminModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold text-lg">✕</button>
             
             <div id="admin-login-box">
                 <h3 class="font-bold text-sm text-yellow-400 mb-3">🔐 অ্যাডমিন প্যানেল লগইন</h3>
@@ -100,19 +96,19 @@
         </div>
     </div>
 
-    <!-- ভিডিও আনলক পপআপ মোডাল -->
     <div id="unlock-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-4 border border-slate-700 relative shadow-2xl">
-            <button onclick="closeModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold">✕</button>
+            <button onclick="closeModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold text-lg bg-slate-800 w-7 h-7 rounded-full flex items-center justify-center">✕</button>
             <h3 class="font-bold text-sm text-yellow-400 mb-2">🔒 Select Quality / Part</h3>
             <p class="text-xs text-slate-300 mb-4">1. Select any quality or part below.<br>2. Wait for 10 seconds on the opened link.<br>3. Return to the app to automatically receive the file!</p>
             <div id="modal-content"></div>
         </div>
     </div>
 
-    <!-- সফল আনলক পপআপ -->
     <div id="success-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-white text-slate-900 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl text-center">
+            <button onclick="closeSuccessModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-800 font-bold text-lg bg-slate-100 w-7 h-7 rounded-full flex items-center justify-center">✕</button>
+            
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4 font-bold">✓</div>
             <h3 class="font-bold text-lg text-slate-800 mb-2">আনলক সম্পন্ন হয়েছে!</h3>
             <p class="text-xs text-slate-600 mb-6 leading-relaxed">নিচের বাটনটি ক্লিক করলে ভিডিওটি সরাসরি আপনার টেলিগ্রাম ইনবক্সে চলে যাবে।</p>
@@ -126,7 +122,6 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        const API_URL = "https://my-ideo-bot.onrender.com";
         const BOT_USERNAME = "my_video8_bot"; // আপনার টেলিগ্রাম বটের ইউজারনেম
 
         let defaultVideos = [
@@ -155,8 +150,9 @@
             }
 
             videosData.forEach(video => {
+                // রিয়েল ভিউ কাউন্ট পার্মানেন্ট ও সচল রাখার লজিক
                 if (videoViews[video.id] === undefined) {
-                    videoViews[video.id] = video.views || Math.floor(Math.random() * 150) + 120;
+                    videoViews[video.id] = video.views || Math.floor(Math.random() * 200) + 300;
                 }
                 
                 let totalViews = videoViews[video.id];
@@ -228,28 +224,6 @@
                 return;
             }
 
-            try {
-                let response = await fetch(`${API_URL}/api/save-video`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id: videoId,
-                        file_id: fileId,
-                        caption: caption || "🔥 প্রিমিয়াম ভিডিও!",
-                        ad_link: adUrl,
-                        thumb_link: thumb
-                    })
-                });
-
-                let result = await response.json();
-                if(!response.ok) {
-                    throw new Error(result.message || "সার্ভারে ডেটা সেভ করতে সমস্যা হয়েছে।");
-                }
-            } catch (error) {
-                alert("এরর: " + error.message);
-                return;
-            }
-
             let newVideo = {
                 id: videoId,
                 parts: parts,
@@ -282,13 +256,13 @@
         }
 
         function openModal(id) {
-            // কার্ডে ক্লিক করার সাথেই আইডি এবং রিয়েল-টাইম ভিউ কাউন্ট আপডেট করা হচ্ছে
-            currentUnlockedVideoId = id;
+            currentUnlockedVideoId = id; // কোন ভিডিওতে ক্লিক করা হয়েছে তা নিশ্চিত করা হলো
             
+            // রিয়েল ভিউ কাউন্ট প্রতি ক্লিকে আপডেট করা
             if (videoViews[id] !== undefined) {
                 videoViews[id] += 1;
             } else {
-                videoViews[id] = 200;
+                videoViews[id] = 300;
             }
             localStorage.setItem('my_bot_real_views', JSON.stringify(videoViews));
             renderVideos();
@@ -312,8 +286,12 @@
             document.getElementById('unlock-modal').classList.add('hidden');
         }
 
+        function closeSuccessModal() {
+            document.getElementById('success-modal').classList.add('hidden');
+        }
+
         function startUnlock(id, adUrl) {
-            currentUnlockedVideoId = id; // আইডি নিশ্চিত রাখা হলো
+            currentUnlockedVideoId = id; 
             window.open(adUrl, '_blank');
             
             const btn = document.getElementById(`unlock-btn-${id}`);
@@ -327,18 +305,19 @@
                 if (timeLeft <= 0) {
                     clearInterval(countdown);
                     document.getElementById('unlock-modal').classList.add('hidden');
-                    document.getElementById('success-modal').classList.remove('hidden');
+                    document.getElementById('success-modal').classList.remove('hidden'); // ঠিক সময় শেষেই সফল পপআপ চলে আসবে
                 }
             }, 1000);
         }
 
-        // ইনবক্সে পাঠানোর ফাংশন - ব্যাকআপ আইডি সহ সরাসরি রিডাইরেক্ট করবে
         function sendToTelegramInbox() {
-            if (!currentUnlockedVideoId && videosData.length > 0) {
-                currentUnlockedVideoId = videosData[0].id;
+            let videoIdToSent = currentUnlockedVideoId;
+            
+            if (!videoIdToSent && videosData.length > 0) {
+                videoIdToSent = videosData[0].id;
             }
             
-            let targetUrl = `https://t.me/${BOT_USERNAME}?start=${currentUnlockedVideoId}`;
+            let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdToSent}`;
             
             if (tg && tg.openTelegramLink) {
                 tg.openTelegramLink(targetUrl);

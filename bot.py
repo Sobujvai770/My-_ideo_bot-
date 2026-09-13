@@ -1,15 +1,62 @@
 import os
+import json
 import threading
 import telebot
 from telebot import types
-from flask import Flask
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 
-# ফ্লাস্ক সার্ভার ইনিশিয়ালাইজ করা (রেন্ডারের পোর্ট রিকোয়ারমেন্ট পূরণের জন্য)
+# ফ্লাস্ক সার্ভার এবং CORS ইনিশিয়ালাইজ করা (যাতে ওয়েব অ্যাপ থেকে রিকোয়েস্ট ব্লক না হয়)
 app = Flask(__name__)
+CORS(app)
+
+DB_FILE = "videos.json"
+
+# ডেটাবেজ লোড করার ফাংশন
+def load_db():
+    if os.path.exists(DB_FILE):
+        with open(DB_FILE, "r", encoding="utf-8") as f:
+            try:
+                return json.load(f)
+            except:
+                return {}
+    return {}
+
+# ডেটাবেজ সেভ করার ফাংশন
+def save_db(data):
+    with open(DB_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
 
 @app.route('/')
 def home():
-    return "Bot is running and alive!"
+    return "Bot and API are running and alive!"
+
+# --- এডমিন প্যানেল থেকে ভিডিও সেভ করার API ---
+@app.route('/api/save-video', methods=['POST'])
+def save_video():
+    try:
+        req_data = request.json
+        v_code = req_data.get("code")  # যেমন: v1, v2
+        file_id = req_data.get("file_id") # টেলিগ্রাম ভিডিও file_id
+        caption = req_data.get("caption", "🔥 প্রিমিয়াম ভিডিও!")
+        ad_link = req_data.get("ad_link", "")
+        thumb_link = req_data.get("thumb_link", "")
+
+        if not v_code or not file_id:
+            return jsonify({"status": "error", "message": "Code and File ID are required!"}), 400
+
+        db = load_db()
+        db[v_code] = {
+            "video_file_id": file_id,
+            "caption": caption,
+            "ad_link": ad_link,
+            "thumb_link": thumb_link
+        }
+        save_db(db)
+
+        return jsonify({"status": "success", "message": f"Video {v_code} saved successfully!"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 def run_web():
     port = int(os.environ.get("PORT", 10000))
@@ -18,33 +65,29 @@ def run_web():
 # আপনার বটের টেলিগ্রাম টোকেন
 bot = telebot.TeleBot('8787602161:AAE_yFcsB2TiEY9LnlrVrF-Pom8ld5L8jCY')
 
-# প্রাইভেট চ্যানেলের ভিডিও ডেটাবেজ (এখানে আপনার ভিডিওর file_id বসাবেন)
-VIDEOS_DB = {
-    "v1": {
-        "video_file_id": "BAACAgUAAyEFAAMBASF0UQADBGqmefvs9O-p30r2InMhLQmpVFMYAAKeJAACQ884VbmCjnrP1-kNPQQ", # আপনার প্রাইভেট চ্যানেলের ভিডিওর টেলিগ্রাম File ID এখানে দিন
-        "caption": "🔥 আপনার কাঙ্ক্ষিত প্রিমিয়াম ভিডিও!\n\n⏱️ এক ঘণ্টা পর অটোমেটিক ভিডিওটি ডিলিট হয়ে যাবে।"
-    }
-}
-
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     command_args = message.text.split()
+    db = load_db()
+    
     if len(command_args) > 1:
         vid_code = command_args[1]
-        if vid_code in VIDEOS_DB:
-            v_data = VIDEOS_DB[vid_code]
+        if vid_code in db:
+            v_data = db[vid_code]
             
             markup = types.InlineKeyboardMarkup()
+            # যদি অ্যাডস্টেরা লিংক থাকে, তবে সেটা বাটনে যুক্ত হবে
+            if v_data.get("ad_link"):
+                markup.row(types.InlineKeyboardButton("🎬 Watch Full Video / Sponsor", url=v_data["ad_link"]))
+            
             markup.row(
-                types.InlineKeyboardButton("📢 Main Channel", url="https://t.me/+rLjXcZr21B45MWQ1"),
-                types.InlineKeyboardButton("📂 All Channel", url="https://t.me/your_all_channel")
+                types.InlineKeyboardButton("📢 Main Channel", url="https://t.me/+rLjXcZr21B45MWQ1")
             )
             
-            # প্রাইভেট চ্যানেল থেকে সরাসরি ইউজারের ইনবক্সে ভিডিও পাঠানোর কোড
             bot.send_video(message.chat.id, v_data["video_file_id"], caption=v_data["caption"], reply_markup=markup)
             return
 
-    web_app_url = "https://sobujvai770.github.io/My-_ideo_bot-/" # আপনার গিটহাবে থাকা মিনি অ্যাপের লিংক
+    web_app_url = "https://sobujvai770.github.io/My-_ideo_bot-/" 
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("🎬 Watch Now (Web App)", web_app=types.WebAppInfo(url=web_app_url)))
     
@@ -56,7 +99,6 @@ def send_welcome(message):
     
     bot.send_message(message.chat.id, welcome_text, reply_markup=markup)
 
-# ভিডিওর আসল file_id বের করার জন্য হ্যান্ডলার (বটে ভিডিও ফরোয়ার্ড করলে আইডি বলে দিবে)
 @bot.message_handler(content_types=['video'])
 def get_video_id(message):
     vid_file_id = message.video.file_id
@@ -67,9 +109,7 @@ def run_bot():
     bot.infinity_polling()
 
 if __name__ == "__main__":
-    # ব্যাকগ্রাউন্ডে ফ্লাস্ক ওয়েব সার্ভার চালু করা
     web_thread = threading.Thread(target=run_web)
     web_thread.start()
     
-    # টেলিগ্রাম বট রান করা
     run_bot()

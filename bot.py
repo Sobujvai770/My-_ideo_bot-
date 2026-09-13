@@ -79,7 +79,7 @@ def send_welcome(message):
     db = load_db()
     
     if len(command_args) > 1:
-        vid_key = command_args[1]
+        vid_key = command_args[1].strip()
         if vid_key in db:
             v_data = db[vid_key]
             
@@ -87,12 +87,12 @@ def send_welcome(message):
             if v_data.get("ad_link"):
                 markup.row(types.InlineKeyboardButton("🎬 Watch Full Video / Sponsor", url=v_data["ad_link"]))
             
-            # মেইন চ্যানেল লেখা থাকবে কিন্তু কোনো প্রাইভেট লিংকে নিয়ে যাবে না (callback_data দেওয়া হয়েছে যাতে ক্লিক করলে জাস্ট অ্যালার্ট দেয় বা কাজ না করে)
             markup.row(types.InlineKeyboardButton("📢 Main Channel", callback_data="main_channel_info"))
             
             bot.send_video(message.chat.id, v_data["video_file_id"], caption=v_data["caption"], reply_markup=markup)
             return
 
+    # মিনি অ্যাপের সঠিক গিটহাব বা রেন্ডার লিংক এখানে সেট করা হলো
     web_app_url = "https://sobujvai770.github.io/My-_ideo_bot-/" 
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("🎬 Watch Now (Web App)", web_app=types.WebAppInfo(url=web_app_url)))
@@ -105,7 +105,6 @@ def send_welcome(message):
     
     bot.send_message(message.chat.id, welcome_text, reply_markup=markup)
 
-# মেইন চ্যানেল বাটনে ক্লিক করলে যেন কোনো প্রাইভেট লিংকে না নিয়ে যায়, তার হ্যান্ডলার
 @bot.callback_query_handler(func=lambda call: call.data == "main_channel_info")
 def callback_main_channel(call):
     bot.answer_callback_query(call.id, "📢 এটি আমাদের অফিসিয়াল মেইন চ্যানেল!", show_alert=True)

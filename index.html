@@ -42,9 +42,12 @@
         <div class="flex items-center space-x-2">
             <span class="text-orange-500 font-bold text-lg">🔥 My Video Bot Hub</span>
         </div>
+        <div>
+            <button onclick="openAdminLogin()" class="bg-slate-700 hover:bg-slate-600 text-xs px-2.5 py-1.5 rounded-lg text-slate-200 transition">⚙️ Admin</button>
+        </div>
     </header>
 
-    <!-- স্ট্যাটাস ও Recent Added -->
+    <!-- মূল ভিডিও ফিড -->
     <main class="p-4 max-w-md mx-auto space-y-4">
         <div class="flex items-center justify-between text-yellow-400 font-semibold text-sm">
             <div class="flex items-center space-x-1">
@@ -53,21 +56,57 @@
             </div>
         </div>
 
-        <!-- ভিডিও কন্টেইনার -->
         <div id="video-container" class="space-y-4"></div>
     </main>
 
-    <!-- মডাল বা পপআপ (অ্যাড ও ভিডিও আনলক করার জন্য) -->
+    <!-- অ্যাডমিন লগইন বা প্যানেল মোডাল -->
+    <div id="admin-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-5 border border-slate-700 relative shadow-2xl max-h-[90vh] overflow-y-auto">
+            <button onclick="closeAdminModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold">✕</button>
+            
+            <div id="admin-login-box">
+                <h3 class="font-bold text-sm text-yellow-400 mb-3">🔐 অ্যাডমিন প্যানেল লগইন</h3>
+                <input type="password" id="admin-pass" placeholder="পাসওয়ার্ড দিন" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white mb-3 focus:outline-none focus:border-orange-500">
+                <button onclick="checkAdminPassword()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 rounded-lg text-xs transition">লগইন করুন</button>
+            </div>
+
+            <div id="admin-panel-box" class="hidden space-y-3">
+                <h3 class="font-bold text-sm text-emerald-400 mb-2">🛠️ নতুন ভিডিও আপলোড করুন</h3>
+                <div>
+                    <label class="text-[11px] text-slate-400">থাম্বনেইল পিকের ডাইরেক্ট লিংক:</label>
+                    <input type="text" id="inp-thumb" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400">ভিডিওর ক্যাপশন:</label>
+                    <input type="text" id="inp-caption" placeholder="ভিডিওর বিবরণ..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400">ভিডিওর লিংক (MP4):</label>
+                    <input type="text" id="inp-videourl" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400">অ্যাডস্টেরা ডাইরেক্ট লিংক:</label>
+                    <input type="text" id="inp-adurl" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400">কত পার্ট বা কোয়ালিটি (যেমন: 2 Parts):</label>
+                    <input type="text" id="inp-parts" value="2 Parts" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+                </div>
+                <button onclick="addNewVideo()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-xs transition shadow-md mt-2">সংরক্ষণ করুন (Publish)</button>
+                
+                <hr class="border-slate-700 my-3">
+                <button onclick="clearAllVideos()" class="w-full bg-red-600/80 hover:bg-red-700 text-white py-1.5 rounded-lg text-[11px] transition">সব ভিডিও ডিলিট করুন</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ভিডিও আনলক পপআপ মোডাল -->
     <div id="unlock-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-4 border border-slate-700 relative shadow-2xl">
             <button onclick="closeModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold">✕</button>
-            
             <h3 class="font-bold text-sm text-yellow-400 mb-2">🔒 Select Quality / Part</h3>
             <p class="text-xs text-slate-300 mb-4">1. Select any quality or part below.<br>2. Wait for 10 seconds on the opened link.<br>3. Return to the app to automatically receive the file!</p>
-            
-            <div id="modal-content">
-                <!-- ডায়নামিক বাটন এখানে আসবে -->
-            </div>
+            <div id="modal-content"></div>
         </div>
     </div>
 
@@ -75,8 +114,7 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // এখানে আপনার যত খুশি ভিডিও যোগ করতে পারবেন
-        const videosData = [
+        let defaultVideos = [
             {
                 id: 1,
                 parts: "2 Parts",
@@ -85,51 +123,113 @@
                 views: "2.3k",
                 videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
                 adsterraUrl: "https://pl31154034.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e471f49615a9d36232"
-            },
-            {
-                id: 2,
-                parts: "1 Part",
-                thumbnail: "https://files.catbox.moe/apifn2.jpeg",
-                caption: "এই মেয়ের একটা ভাইরাল ভিডিও উফফ 💋",
-                views: "6.1k",
-                videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
-                adsterraUrl: "https://pl31154034.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e471f49615a9d36232"
             }
         ];
 
-        const container = document.getElementById('video-container');
+        let videosData = JSON.parse(localStorage.getItem('my_bot_videos')) || defaultVideos;
 
-        videosData.forEach(video => {
-            const card = document.createElement('div');
-            card.className = "rainbow-border shadow-xl";
-            card.innerHTML = `
-                <div class="bg-[#1e293b] rounded-2xl p-3">
-                    <div class="relative cursor-pointer rounded-xl overflow-hidden bg-slate-800" onclick="openModal(${video.id})">
-                        <div class="absolute top-2 right-2 bg-black/70 text-yellow-400 px-2 py-0.5 rounded text-[10px] font-bold z-10">
-                            ${video.parts}
+        function renderVideos() {
+            const container = document.getElementById('video-container');
+            container.innerHTML = '';
+
+            if(videosData.length === 0) {
+                container.innerHTML = `<p class="text-center text-xs text-slate-500 py-10">কোনো ভিডিও নেই। অ্যাডমিন প্যানেল থেকে ভিডিও যোগ করুন।</p>`;
+                return;
+            }
+
+            videosData.forEach(video => {
+                const card = document.createElement('div');
+                card.className = "rainbow-border shadow-xl";
+                card.innerHTML = `
+                    <div class="bg-[#1e293b] rounded-2xl p-3">
+                        <div class="relative cursor-pointer rounded-xl overflow-hidden bg-slate-800" onclick="openModal(${video.id})">
+                            <div class="absolute top-2 right-2 bg-black/70 text-yellow-400 px-2 py-0.5 rounded text-[10px] font-bold z-10">
+                                ${video.parts || '1 Part'}
+                            </div>
+                            <div class="grid grid-cols-3 gap-1 h-32">
+                                <img src="${video.thumbnail}" class="w-full h-full object-cover">
+                                <img src="${video.thumbnail}" class="w-full h-full object-cover">
+                                <img src="${video.thumbnail}" class="w-full h-full object-cover">
+                            </div>
+                            <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded-md text-[11px] flex items-center space-x-1 text-slate-200">
+                                <span>👁️</span>
+                                <span>${video.views || '1.2k'}</span>
+                            </div>
                         </div>
-                        <div class="grid grid-cols-3 gap-1 h-32">
-                            <img src="${video.thumbnail}" class="w-full h-full object-cover">
-                            <img src="${video.thumbnail}" class="w-full h-full object-cover">
-                            <img src="${video.thumbnail}" class="w-full h-full object-cover">
-                        </div>
-                        <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded-md text-[11px] flex items-center space-x-1 text-slate-200">
-                            <span>👁️</span>
-                            <span>${video.views}</span>
+
+                        <div class="flex items-center justify-between mt-3">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center font-bold text-[10px]">TB</div>
+                                <p class="text-xs font-medium text-slate-200 line-clamp-1">${video.caption}</p>
+                            </div>
+                            <div class="bg-red-600 p-1.5 rounded-full text-white text-xs">▶</div>
                         </div>
                     </div>
+                `;
+                container.appendChild(card);
+            });
+        }
 
-                    <div class="flex items-center justify-between mt-3">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center font-bold text-[10px]">TB</div>
-                            <p class="text-xs font-medium text-slate-200 line-clamp-1">${video.caption}</p>
-                        </div>
-                        <div class="bg-red-600 p-1.5 rounded-full text-white text-xs">▶</div>
-                    </div>
-                </div>
-            `;
-            container.appendChild(card);
-        });
+        renderVideos();
+
+        function openAdminLogin() {
+            document.getElementById('admin-modal').classList.remove('hidden');
+            document.getElementById('admin-login-box').classList.remove('hidden');
+            document.getElementById('admin-panel-box').classList.add('hidden');
+            document.getElementById('admin-pass').value = '';
+        }
+
+        function closeAdminModal() {
+            document.getElementById('admin-modal').classList.add('hidden');
+        }
+
+        function checkAdminPassword() {
+            let pass = document.getElementById('admin-pass').value;
+            if(pass === "17906780Ss") {
+                document.getElementById('admin-login-box').classList.add('hidden');
+                document.getElementById('admin-panel-box').classList.remove('hidden');
+            } else {
+                alert("ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন।");
+            }
+        }
+
+        function addNewVideo() {
+            let thumb = document.getElementById('inp-thumb').value;
+            let caption = document.getElementById('inp-caption').value;
+            let videoUrl = document.getElementById('inp-videourl').value;
+            let adUrl = document.getElementById('inp-adurl').value;
+            let parts = document.getElementById('inp-parts').value;
+
+            if(!thumb || !videoUrl || !adUrl) {
+                alert("দয়া করে থাম্বনেইল লিংক, ভিডিও লিংক এবং অ্যাডস্টেরা লিংক পূরণ করুন!");
+                return;
+            }
+
+            let newVideo = {
+                id: Date.now(),
+                parts: parts,
+                thumbnail: thumb,
+                caption: caption || "নিউ ভাইরাল ভিডিও 💋",
+                views: "1.5k",
+                videoUrl: videoUrl,
+                adsterraUrl: adUrl
+            };
+
+            videosData.unshift(newVideo);
+            localStorage.setItem('my_bot_videos', JSON.stringify(videosData));
+            renderVideos();
+            closeAdminModal();
+            alert("সফলভাবে নতুন ভিডিও যুক্ত হয়েছে!");
+        }
+
+        function clearAllVideos() {
+            if(confirm("সব ভিডিও ডিলিট করতে চান?")) {
+                videosData = [];
+                localStorage.removeItem('my_bot_videos');
+                renderVideos();
+                closeAdminModal();
+            }
+        }
 
         function openModal(id) {
             const video = videosData.find(v => v.id === id);
@@ -154,7 +254,6 @@
         function startUnlock(id, adUrl, videoUrl) {
             window.open(adUrl, '_blank');
             const btn = document.getElementById(`unlock-btn-${id}`);
-            
             btn.disabled = true;
             let timeLeft = 10;
             
@@ -167,7 +266,7 @@
                     btn.innerHTML = `<span>✅ আনলক সফল! দেখতে ক্লিক করুন</span>`;
                     btn.className = "w-full bg-emerald-600 hover:bg-emerald-700 p-3 rounded-xl text-center text-xs text-white font-bold transition";
                     btn.onclick = function() {
-                        window.location.href = videoUrl; // সরাসরি ভিডিও লিংকে নিয়ে যাবে
+                        window.location.href = videoUrl;
                     };
                 }
             }, 1000);

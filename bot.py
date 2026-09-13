@@ -18,10 +18,11 @@ def run_web():
 # আপনার বটের টেলিগ্রাম টোকেন
 bot = telebot.TeleBot('8787602161:AAE_yFcsB2TiEY9LnlrVrF-Pom8ld5L8jCY')
 
+# প্রাইভেট চ্যানেলের ভিডিও ডেটাবেজ (এখানে আপনার ভিডিওর file_id বসাবেন)
 VIDEOS_DB = {
     "v1": {
-        "video_url": "https://files.catbox.moe/xxxxxx.mp4", 
-        "caption": "🎬 সেই একটা মাল দুধ গুলো দেখার মতন ভিডিও\n\n⏱️ এক ঘণ্টা পর অটোমেটিক ভিডিওটি ডিলিট হয়ে যাবে।"
+        "video_file_id": "BQACAgUAAxkBAAI...", # আপনার প্রাইভেট চ্যানেলের ভিডিওর টেলিগ্রাম File ID এখানে দিন
+        "caption": "🔥 আপনার কাঙ্ক্ষিত প্রিমিয়াম ভিডিও!\n\n⏱️ এক ঘণ্টা পর অটোমেটিক ভিডিওটি ডিলিট হয়ে যাবে।"
     }
 }
 
@@ -39,10 +40,11 @@ def send_welcome(message):
                 types.InlineKeyboardButton("📂 All Channel", url="https://t.me/your_all_channel")
             )
             
-            bot.send_video(message.chat.id, v_data["video_url"], caption=v_data["caption"], reply_markup=markup)
+            # প্রাইভেট চ্যানেল থেকে সরাসরি ইউজারের ইনবক্সে ভিডিও পাঠানোর কোড
+            bot.send_video(message.chat.id, v_data["video_file_id"], caption=v_data["caption"], reply_markup=markup)
             return
 
-    web_app_url = "https://sobujvai770.github.io/My-_ideo_bot-/" # আপনার মিনি অ্যাপের লিংক
+    web_app_url = "https://sobujvai770.github.io/My-_ideo_bot-/" # আপনার গিটহাবে থাকা মিনি অ্যাপের লিংক
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("🎬 Watch Now (Web App)", web_app=types.WebAppInfo(url=web_app_url)))
     
@@ -52,15 +54,20 @@ def send_welcome(message):
         "👇 দেরি না করে নিচের মেনু থেকে অ্যাপটি ওপেন করুন! 👇"
     )
     
-    # ছবির লিংক এরর এড়াতে সরাসরি মেসেজ ও মিনি অ্যাপের বাটন পাঠানো হচ্ছে
     bot.send_message(message.chat.id, welcome_text, reply_markup=markup)
+
+# ভিডিওর আসল file_id বের করার জন্য হ্যান্ডলার (বটে ভিডিও ফরোয়ার্ড করলে আইডি বলে দিবে)
+@bot.message_handler(content_types=['video'])
+def get_video_id(message):
+    vid_file_id = message.video.file_id
+    bot.reply_to(message, f"এই ভিডিওর File ID হলো:\n\n`{vid_file_id}`", parse_mode="Markdown")
 
 def run_bot():
     print("Bot is running...")
     bot.infinity_polling()
 
 if __name__ == "__main__":
-    # ব্যাকগ্রাউন্ডে ফ্লাস্ক ওয়েব সার্ভার চালু করা যাতে রেন্ডার পোর্ট পেয়ে যায়
+    # ব্যাকগ্রাউন্ডে ফ্লাস্ক ওয়েব সার্ভার চালু করা
     web_thread = threading.Thread(target=run_web)
     web_thread.start()
     

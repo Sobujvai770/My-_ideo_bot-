@@ -21,7 +21,7 @@ bot = telebot.TeleBot('8787602161:AAE_yFcsB2TiEY9LnlrVrF-Pom8ld5L8jCY')
 # প্রাইভেট চ্যানেলের ভিডিও ডেটাবেজ (এখানে আপনার ভিডিওর file_id বসাবেন)
 VIDEOS_DB = {
     "v1": {
-        "video_file_id": "BQACAgUAAxkBAAI...", # আপনার প্রাইভেট চ্যানেলের ভিডিওর টেলিগ্রাম File ID এখানে দিন
+        "video_file_id": "BAACAgUAAyEFAAMBASF0UQADBGqmefvs9O-p30r2InMhLQmpVFMYAAKeJAACQ884VbmCjnrP1-kNPQQ", # আপনার প্রাইভেট চ্যানেলের ভিডিওর টেলিগ্রাম File ID এখানে দিন
         "caption": "🔥 আপনার কাঙ্ক্ষিত প্রিমিয়াম ভিডিও!\n\n⏱️ এক ঘণ্টা পর অটোমেটিক ভিডিওটি ডিলিট হয়ে যাবে।"
     }
 }

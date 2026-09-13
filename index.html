@@ -43,8 +43,8 @@
             <span class="text-orange-500 font-bold text-lg">🔥 My Video Bot Hub</span>
         </div>
         <div>
-            <!-- শুধু আইকন রাখা হয়েছে -->
-            <button onclick="openAdminLogin()" class="bg-slate-700 hover:bg-slate-600 w-8 h-8 rounded-lg text-slate-200 transition flex items-center justify-center text-sm">⚙️</button>
+            <!-- আইকনটিতে ক্লিক করলে আপনার আইডি চেক করবে -->
+            <button onclick="checkAdminAccess()" class="bg-slate-700 hover:bg-slate-600 w-8 h-8 rounded-lg text-slate-200 transition flex items-center justify-center text-sm">⚙️</button>
         </div>
     </header>
 
@@ -147,7 +147,6 @@
                             <div class="absolute top-2 right-2 bg-black/70 text-yellow-400 px-2 py-0.5 rounded text-[10px] font-bold z-10">
                                 ${video.parts || '1 Part'}
                             </div>
-                            <!-- একটি মাত্র ছবি দেখানোর জন্য সিঙ্গেল ইমেজ ট্যাগ -->
                             <img src="${video.thumbnail}" class="w-full h-full object-cover">
                             
                             <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded-md text-[11px] flex items-center space-x-1 text-slate-200">
@@ -171,7 +170,18 @@
 
         renderVideos();
 
-        function openAdminLogin() {
+        // আপনার দেওয়া টেলিগ্রাম আইডি এখানে সেট করা হলো
+        const ADMIN_TELEGRAM_ID = 8326665891; 
+
+        function checkAdminAccess() {
+            let user = tg.initDataUnsafe && tg.initDataUnsafe.user;
+            
+            // যদি ইউজার আইডি না মেলে বা ব্রাউজার থেকে খোলা হয়, তবে কাজ করবে না
+            if (!user || user.id !== ADMIN_TELEGRAM_ID) {
+                return; 
+            }
+
+            // আইডি মিলে গেলে অ্যাডমিন প্যানেল ওপেন হবে
             document.getElementById('admin-modal').classList.remove('hidden');
             document.getElementById('admin-login-box').classList.remove('hidden');
             document.getElementById('admin-panel-box').classList.add('hidden');

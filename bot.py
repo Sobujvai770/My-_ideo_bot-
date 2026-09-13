@@ -27,6 +27,12 @@ def save_db(data):
 def home():
     return "Bot and API are running and alive!"
 
+# ডাটাবেজ চেক করার জন্য সহজে দেখার রুট (যদি প্রয়োজন হয়)
+@app.route('/api/get-videos', methods=['GET'])
+def get_videos():
+    db = load_db()
+    return jsonify(db), 200
+
 @app.route('/api/save-video', methods=['POST', 'OPTIONS'])
 def save_video():
     if request.method == 'OPTIONS':
@@ -38,7 +44,7 @@ def save_video():
 
     try:
         req_data = request.json
-        video_id = str(req_data.get("id"))
+        video_id = str(req_data.get("id")).strip()
         file_id = req_data.get("file_id")
         caption = req_data.get("caption", "🔥 প্রিমিয়াম ভিডিও!")
         ad_link = req_data.get("ad_link", "")
@@ -78,8 +84,11 @@ def send_welcome(message):
     command_args = message.text.split()
     db = load_db()
     
+    # ইনপুটে যদি কোনো ভিডিও আইডি বা পেলোড থাকে
     if len(command_args) > 1:
-        vid_key = command_args[1].strip()
+        vid_key = str(command_args[1]).strip()
+        
+        # ডাটাবেজে আইডি মিলে গেলে সরাসরি ভিডিও পাঠিয়ে দিবে
         if vid_key in db:
             v_data = db[vid_key]
             
@@ -89,10 +98,17 @@ def send_welcome(message):
             
             markup.row(types.InlineKeyboardButton("📢 Main Channel", callback_data="main_channel_info"))
             
-            bot.send_video(message.chat.id, v_data["video_file_id"], caption=v_data["caption"], reply_markup=markup)
+            try:
+                bot.send_video(message.chat.id, v_data["video_file_id"], caption=v_data.get("caption", "🔥 প্রিমিয়াম ভিডিও!"), reply_markup=markup)
+            except Exception as e:
+                bot.send_message(message.chat.id, f"⚠️ ভিডিও পাঠাতে সমস্যা হয়েছে বা ফাইল আইডি ভুল আছে।\nএরর: {e}")
+            return
+        else:
+            # যদি ডাটাবেজে আইডিটি না থাকে, তবে ইউজারকে জানিয়ে দিবে
+            bot.send_message(message.chat.id, "⚠️ দুঃখিত! এই ভিডিওটির ডেটা সার্ভারে পাওয়া যায়নি বা ডিলিট হয়ে গেছে। দয়া করে মিনি অ্যাপ থেকে অন্য ভিডিও ট্রাই করুন।")
             return
 
-    # মিনি অ্যাপের সঠিক গিটহাব বা রেন্ডার লিংক এখানে সেট করা হলো
+    # সাধারণ ওয়েলকাম মেসেজ ও মিনি অ্যাপ ওপেন করার বাটন
     web_app_url = "https://sobujvai770.github.io/My-_ideo_bot-/" 
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("🎬 Watch Now (Web App)", web_app=types.WebAppInfo(url=web_app_url)))

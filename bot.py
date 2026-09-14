@@ -129,7 +129,7 @@ def run_web():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-# আপনার নতুন টোকেন এখানে সেট করা হলো
+# আপনার টোকেন
 BOT_TOKEN = '8787602161:AAGc0LUBXjyLcVhzyAVHzG3jXwA3mSj5F3Y'
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -162,9 +162,8 @@ def send_welcome(message):
                     reply_markup=markup
                 )
                 
-                # ব্যাকগ্রাউন্ডে থ্রেড চালিয়ে নির্দিষ্ট সময় (যেমন ৩০০০ সেকেন্ড বা ১ ঘন্টা) পর ভিডিওটি ডিলিট করার ব্যবস্থা
                 def delete_later(chat_id, msg_id):
-                    time.sleep(3600) # ১ ঘন্টা = ৩৬০০ সেকেন্ড
+                    time.sleep(3600)
                     try:
                         bot.delete_message(chat_id, msg_id)
                     except:
@@ -195,10 +194,18 @@ def send_welcome(message):
 def callback_main_channel(call):
     bot.answer_callback_query(call.id, "📢 এটি আমাদের অফিসিয়াল চ্যানেল!", show_alert=True)
 
-@bot.message_handler(content_types=['video'])
+# আপডেট করা ভিডিও ফাইল আইডি ধরার হ্যান্ডলার (ফরোয়ার্ড ও ডকুমেন্ট সাপোর্ট সহ)
+@bot.message_handler(content_types=['video', 'document'])
 def get_video_id(message):
-    vid_file_id = message.video.file_id
-    bot.reply_to(message, f"এই ভিডিওর File ID হলো:\n\n`{vid_file_id}`", parse_mode="Markdown")
+    try:
+        if message.video:
+            vid_file_id = message.video.file_id
+            bot.reply_to(message, f"✅ এই ভিডিওর File ID হলো:\n\n`{vid_file_id}`", parse_mode="Markdown")
+        elif message.document and 'video' in message.document.mime_type:
+            doc_file_id = message.document.file_id
+            bot.reply_to(message, f"✅ এই ভিডিও (Document) ফাইল আইডি হলো:\n\n`{doc_file_id}`", parse_mode="Markdown")
+    except Exception as e:
+        bot.reply_to(message, f"⚠️ ফাইল আইডি পেতে সমস্যা হয়েছে: {str(e)}")
 
 def run_bot():
     print("Bot is running...")

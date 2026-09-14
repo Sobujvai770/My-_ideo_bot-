@@ -146,20 +146,22 @@
 
         const BOT_USERNAME = "my_video8_bot"; 
 
-        // রেন্ডার ব্যাকএন্ডের সঠিক ডাইনামিক বেস ইউআরএল (ক্যাশ এড়াতে টাইমস্ট্যাম্প যুক্ত করা হয়েছে)
+        // রেন্ডার ব্যাকএন্ডের সঠিক বেস ইউআরএল
         const API_BASE = "https://my-ideo-bot.onrender.com";
 
         let videosData = [];
         let videoViews = JSON.parse(localStorage.getItem('my_bot_real_views')) || {};
         let currentUnlockedVideoId = null;
 
-        // সার্ভার থেকে ভিডিও ফেচ করা (ক্যাশ এড়াতে ?t=timestamp ব্যবহার করা হয়েছে)
+        // সার্ভার থেকে ভিডিও ফেচ করা
         async function fetchVideosFromBackend() {
             try {
-                let response = await fetch(`${API_BASE}/api/get-videos?t=` + new Date().getTime());
+                let response = await fetch(`${API_BASE}/api/get-videos?t=` + new Date().getTime(), {
+                    cache: 'no-store'
+                });
                 let data = await response.json();
                 
-                // অবজেক্ট থেকে অ্যারেতে রূপান্তর করা (নতুন ভিডিওগুলো আগে দেখানোর জন্য reverse করা হয়েছে)
+                // অবজেক্ট থেকে অ্যারেতে রূপান্তর করা এবং রিভার্স করা যাতে নতুন ভিডিও উপরে থাকে
                 videosData = Object.keys(data).map(key => ({
                     id: key,
                     ...data[key]
@@ -173,15 +175,18 @@
             }
         }
 
-        // বটের ইউজার স্ট্যাটিস্টিক্স ফেচ করা
+        // বটের ইউজার ও ভিডিও স্ট্যাটিস্টিক্স ফেচ করা
         async function fetchBotStats() {
             try {
-                let response = await fetch(`${API_BASE}/api/bot-stats?t=` + new Date().getTime());
+                let response = await fetch(`${API_BASE}/api/bot-stats?t=` + new Date().getTime(), {
+                    cache: 'no-store'
+                });
                 let stats = await response.json();
-                document.getElementById('stat-total-users').innerText = stats.total_users + " জন";
-                document.getElementById('stat-total-videos').innerText = stats.total_videos;
+                document.getElementById('stat-total-users').innerText = (stats.total_users || 0) + " জন";
+                document.getElementById('stat-total-videos').innerText = (stats.total_videos || 0);
             } catch (err) {
                 document.getElementById('stat-total-users').innerText = "অরক্ষিত";
+                document.getElementById('stat-total-videos').innerText = "0";
             }
         }
 
@@ -290,17 +295,19 @@
 
                 let result = await response.json();
                 if (response.ok) {
-                    alert("সফলভাবে নতুন ভিডিও সার্ভারে যুক্ত হয়েছে!");
+                    alert("সফলভাবে নতুন ভিডিও সার্ভারে ও মিনি এপে যুক্ত হয়েছে!");
+                    
+                    // ইনপুট ফিল্ডগুলো ক্লিয়ার করা
                     document.getElementById('inp-thumb').value = '';
                     document.getElementById('inp-caption').value = '';
                     document.getElementById('inp-videourl').value = '';
                     document.getElementById('inp-adurl').value = '';
                     
-                    // সাথে সাথে ডাটা রিফ্রেশ করে হোমপেজে ও প্যানেলে দেখাবে
+                    // সাথে সাথে ডাটা ফেচ করে মিনি অ্যাপ ও স্ট্যাটাস আপডেট করা
                     await fetchVideosFromBackend();
                     await fetchBotStats();
                 } else {
-                    alert("সার্ভারে সেভ করতে সমস্যা হয়েছে: " + result.message);
+                    alert("সার্ভারে সেভ করতে সমস্যা হয়েছে: " + (result.message || "অজানা সমস্যা"));
                 }
             } catch (err) {
                 alert("সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি!");
@@ -410,7 +417,7 @@
             let videoIdToSent = currentUnlockedVideoId;
             
             if (!videoIdToSent && videosData.length > 0) {
-                videoIdToSent = videosData.id;
+                videoIdToSent = videosData[0].id;
             }
             
             let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdToSent}`;

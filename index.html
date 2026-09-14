@@ -33,7 +33,7 @@
     <!-- স্প্ল্যাশ স্ক্রিন -->
     <div id="splash-screen">
         <img src="https://files.catbox.moe/apifn2.jpeg" class="w-24 h-24 rounded-full object-cover border-2 border-orange-500 shadow-2xl animate-pulse">
-        <h2 class="text-orange-500 font-bold text-lg mt-3">My Video Bot</h2>
+        <h2 class="text-orange-500 font-bold text-lg mt-3">My Video Bot Hub</h2>
         <p class="text-xs text-slate-400 mt-1">লোড হচ্ছে, একটু অপেক্ষা করুন...</p>
     </div>
 
@@ -73,7 +73,6 @@
             </div>
 
             <div id="admin-panel-box" class="hidden space-y-4">
-                <!-- ইউজার স্ট্যাটিস্টিক্স কার্ড -->
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700">
                     <h3 class="font-bold text-xs text-yellow-400 mb-2">📊 বটের লাইভ স্ট্যাটিস্টিক্স</h3>
                     <div class="flex justify-between text-xs text-slate-300">
@@ -109,20 +108,38 @@
                 
                 <hr class="border-slate-700 my-3">
                 
-                <!-- ভিডিও ম্যানেজমেন্ট ও ডিলিট সেকশন -->
                 <h3 class="font-bold text-xs text-red-400 mb-2">🗑️ ভিডিও ম্যানেজমেন্ট (ডিলিট করুন)</h3>
                 <div id="admin-video-list" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
             </div>
         </div>
     </div>
 
-    <!-- ভিডিও আনলক পপআপ মোডাল -->
+    <!-- ভিডিও আনলক ও টাইমার পপআপ মোডাল -->
     <div id="unlock-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-4 border border-slate-700 relative shadow-2xl">
             <button onclick="closeModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold text-lg bg-slate-800 w-7 h-7 rounded-full flex items-center justify-center">✕</button>
             <h3 class="font-bold text-sm text-yellow-400 mb-2">🔒 Select Quality / Part</h3>
             <p class="text-xs text-slate-300 mb-4">1. Select any quality or part below.<br>2. Wait for 10 seconds on the opened link.<br>3. Return to the app to automatically receive the file!</p>
             <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <!-- বিজ্ঞাপন ও টাইমার কাউন্টডাউন মোডাল -->
+    <div id="ad-timer-modal" class="fixed inset-0 bg-black/85 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-5 border border-slate-700 text-center relative shadow-2xl">
+            <h3 class="font-bold text-sm text-yellow-400 mb-2">⏳ Unlock Video</h3>
+            <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 my-3 text-left text-xs text-slate-300">
+                <p class="text-orange-400 font-bold mb-1">⏰ ১০ সেকেন্ডের একটি বিজ্ঞাপন দেখতে হবে।</p>
+                <p class="text-[11px] text-slate-400">• নিচে বাটনটি ক্লিক করুন এবং কমপক্ষে ১০ সেকেন্ড সেই পেইজে থাকুন।</p>
+            </div>
+            
+            <a href="#" id="ad-link-btn" target="_blank" onclick="startAdTimer()" class="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-xs transition mb-3 shadow-lg">
+                📢 বিজ্ঞাপন দেখুন
+            </a>
+
+            <div id="timer-status" class="text-xs text-red-400 font-semibold">
+                ⚠️ ১০ সেকেন্ডের আগে ফিরে এলে ভিডিওটি আনলক হবে না!
+            </div>
         </div>
     </div>
 
@@ -133,7 +150,7 @@
             
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4 font-bold">✓</div>
             <h3 class="font-bold text-lg text-slate-800 mb-2">আনলক সম্পন্ন হয়েছে!</h3>
-            <p class="text-xs text-slate-600 mb-6 leading-relaxed">নিচের বাটনটি ক্লিক করলে ভিডিওটি সরাসরি আপনার টেলিগ্রাম ইনবক্সে চলে যাবে।</p>
+            <p class="text-xs text-slate-600 mb-6 leading-relaxed">নিচের বাটনটি ক্লিক করলে ভিডিওটি সরাসরি আপনার টেলিগ্রাম ইনবক্সে চলে যাবে। এটি কিছুক্ষণ পর অটোমেটিক ডিলিট হয়ে যাবে।</p>
             <button onclick="sendToTelegramInbox()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-2xl text-sm transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/30">
                 <span>📥 ইনবক্সে পাঠান</span>
             </button>
@@ -145,42 +162,29 @@
         tg.expand();
 
         const BOT_USERNAME = "my_video8_bot"; 
-
-        // রেন্ডার ব্যাকএন্ডের সঠিক বেস ইউআরএল
         const API_BASE = "https://my-ideo-bot.onrender.com";
 
         let videosData = [];
         let videoViews = JSON.parse(localStorage.getItem('my_bot_real_views')) || {};
         let currentUnlockedVideoId = null;
+        let currentAdUrl = "";
+        let timerInterval = null;
 
-        // সার্ভার থেকে ভিডিও ফেচ করা
         async function fetchVideosFromBackend() {
             try {
-                let response = await fetch(`${API_BASE}/api/get-videos?t=` + new Date().getTime(), {
-                    cache: 'no-store'
-                });
+                let response = await fetch(`${API_BASE}/api/get-videos?t=` + new Date().getTime(), { cache: 'no-store' });
                 let data = await response.json();
-                
-                // অবজেক্ট থেকে অ্যারেতে রূপান্তর করা এবং রিভার্স করা যাতে নতুন ভিডিও উপরে থাকে
-                videosData = Object.keys(data).map(key => ({
-                    id: key,
-                    ...data[key]
-                })).reverse();
-                
+                videosData = Object.keys(data).map(key => ({ id: key, ...data[key] })).reverse();
                 renderVideos();
                 renderAdminVideoList();
             } catch (err) {
-                console.error("Failed to fetch videos:", err);
                 document.getElementById('video-container').innerHTML = `<p class="text-center text-xs text-red-400 py-10">সার্ভার থেকে ডেটা লোড করতে সমস্যা হয়েছে!</p>`;
             }
         }
 
-        // বটের ইউজার ও ভিডিও স্ট্যাটিস্টিক্স ফেচ করা
         async function fetchBotStats() {
             try {
-                let response = await fetch(`${API_BASE}/api/bot-stats?t=` + new Date().getTime(), {
-                    cache: 'no-store'
-                });
+                let response = await fetch(`${API_BASE}/api/bot-stats?t=` + new Date().getTime(), { cache: 'no-store' });
                 let stats = await response.json();
                 document.getElementById('stat-total-users').innerText = (stats.total_users || 0) + " জন";
                 document.getElementById('stat-total-videos').innerText = (stats.total_videos || 0);
@@ -190,7 +194,6 @@
             }
         }
 
-        // পেজ লোড হওয়ার সাথে সাথেই কল হবে
         fetchVideosFromBackend();
 
         function renderVideos() {
@@ -206,7 +209,6 @@
                 if (videoViews[video.id] === undefined) {
                     videoViews[video.id] = Math.floor(Math.random() * 200) + 300;
                 }
-                
                 let totalViews = videoViews[video.id];
                 let formattedViews = totalViews > 1000 ? (totalViews / 1000).toFixed(1) + 'k' : totalViews;
 
@@ -219,13 +221,11 @@
                                 ${video.parts || '2 Parts'}
                             </div>
                             <img src="${video.thumb_link || video.thumbnail}" class="w-full h-full object-cover">
-                            
                             <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded-md text-[11px] flex items-center space-x-1 text-slate-200">
                                 <span>👁️</span>
                                 <span>${formattedViews}</span>
                             </div>
                         </div>
-
                         <div class="flex items-center justify-between mt-3">
                             <div class="flex items-center space-x-2 flex-1 mr-2">
                                 <div class="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center font-bold text-[10px] shrink-0">TB</div>
@@ -247,9 +247,7 @@
             document.getElementById('admin-pass').value = '';
         }
 
-        function closeAdminModal() {
-            document.getElementById('admin-modal').classList.add('hidden');
-        }
+        function closeAdminModal() { document.getElementById('admin-modal').classList.add('hidden'); }
 
         function checkAdminPassword() {
             let pass = document.getElementById('admin-pass').value;
@@ -293,21 +291,16 @@
                     body: JSON.stringify(newVideo)
                 });
 
-                let result = await response.json();
                 if (response.ok) {
                     alert("সফলভাবে নতুন ভিডিও সার্ভারে ও মিনি এপে যুক্ত হয়েছে!");
-                    
-                    // ইনপুট ফিল্ডগুলো ক্লিয়ার করা
                     document.getElementById('inp-thumb').value = '';
                     document.getElementById('inp-caption').value = '';
                     document.getElementById('inp-videourl').value = '';
                     document.getElementById('inp-adurl').value = '';
-                    
-                    // সাথে সাথে ডাটা ফেচ করে মিনি অ্যাপ ও স্ট্যাটাস আপডেট করা
                     await fetchVideosFromBackend();
                     await fetchBotStats();
                 } else {
-                    alert("সার্ভারে সেভ করতে সমস্যা হয়েছে: " + (result.message || "অজানা সমস্যা"));
+                    alert("সার্ভারে সেভ করতে সমস্যা হয়েছে।");
                 }
             } catch (err) {
                 alert("সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি!");
@@ -317,12 +310,10 @@
         function renderAdminVideoList() {
             const listContainer = document.getElementById('admin-video-list');
             listContainer.innerHTML = '';
-
             if (videosData.length === 0) {
                 listContainer.innerHTML = `<p class="text-[11px] text-slate-500">কোনো ভিডিও নেই।</p>`;
                 return;
             }
-
             videosData.forEach(video => {
                 const item = document.createElement('div');
                 item.className = "flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800";
@@ -340,41 +331,30 @@
         async function deleteVideo(id) {
             if (confirm("এই ভিডিওটি কি সত্যি ডিলিট করতে চান?")) {
                 try {
-                    let response = await fetch(`${API_BASE}/api/delete-video/${id}`, {
-                        method: 'DELETE'
-                    });
-                    let result = await response.json();
+                    let response = await fetch(`${API_BASE}/api/delete-video/${id}`, { method: 'DELETE' });
                     if (response.ok) {
                         alert("ভিডিও সফলভাবে ডিলিট করা হয়েছে!");
                         await fetchVideosFromBackend();
                         await fetchBotStats();
-                    } else {
-                        alert("ডিলিট করতে সমস্যা হয়েছে: " + result.message);
                     }
                 } catch (err) {
-                    alert("সার্ভার এরর! ডিলিট করা যায়নি।");
+                    alert("সার্ভার এরর!");
                 }
             }
         }
 
         function openModal(id) {
             currentUnlockedVideoId = id; 
-            
-            if (videoViews[id] !== undefined) {
-                videoViews[id] += 1;
-            } else {
-                videoViews[id] = 300;
-            }
+            if (videoViews[id] !== undefined) { videoViews[id] += 1; } else { videoViews[id] = 300; }
             localStorage.setItem('my_bot_real_views', JSON.stringify(videoViews));
             renderVideos();
 
             const video = videosData.find(v => v.id == id);
-            const modalContent = document.getElementById('modal-content');
-            
-            let adLinkToOpen = video ? video.ad_link : "https://pl31154034.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e471f49615a9d36232";
+            currentAdUrl = video ? video.ad_link : "https://pl31154034.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e471f49615a9d36232";
 
+            const modalContent = document.getElementById('modal-content');
             modalContent.innerHTML = `
-                <button onclick="startUnlock('${id}', '${adLinkToOpen}')" id="unlock-btn-${id}" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded-xl flex items-center justify-between text-xs text-white transition">
+                <button onclick="openAdTimerModal()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded-xl flex items-center justify-between text-xs text-white transition">
                     <span class="flex items-center space-x-2">
                         <span>📥</span>
                         <span>Video Part [HD]</span>
@@ -385,41 +365,40 @@
             document.getElementById('unlock-modal').classList.remove('hidden');
         }
 
-        function closeModal() {
+        function closeModal() { document.getElementById('unlock-modal').classList.add('hidden'); }
+        
+        function openAdTimerModal() {
             document.getElementById('unlock-modal').classList.add('hidden');
+            document.getElementById('ad-link-btn').href = currentAdUrl;
+            document.getElementById('timer-status').innerHTML = "⚠️ ১০ সেকেন্ডের আগে ফিরে এলে ভিডিওটি আনলক হবে না!";
+            document.getElementById('timer-status').className = "text-xs text-red-400 font-semibold";
+            document.getElementById('ad-timer-modal').classList.remove('hidden');
         }
 
-        function closeSuccessModal() {
-            document.getElementById('success-modal').classList.add('hidden');
-        }
-
-        function startUnlock(id, adUrl) {
-            currentUnlockedVideoId = id; 
-            window.open(adUrl, '_blank');
-            
-            const btn = document.getElementById(`unlock-btn-${id}`);
-            if(btn) btn.disabled = true;
+        function startAdTimer() {
+            window.open(currentAdUrl, '_blank');
             let timeLeft = 10;
+            const statusBox = document.getElementById('timer-status');
             
-            let countdown = setInterval(() => {
+            if(timerInterval) clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
                 timeLeft--;
-                if(btn) btn.innerHTML = `⏳ অপেক্ষা করুন: ${timeLeft} সেকেন্ড`;
+                statusBox.innerHTML = `⏳ অপেক্ষা করুন: ${timeLeft} সেকেন্ড`;
+                statusBox.className = "text-xs text-yellow-400 font-semibold";
 
                 if (timeLeft <= 0) {
-                    clearInterval(countdown);
-                    document.getElementById('unlock-modal').classList.add('hidden');
+                    clearInterval(timerInterval);
+                    document.getElementById('ad-timer-modal').classList.add('hidden');
                     document.getElementById('success-modal').classList.remove('hidden');
                 }
             }, 1000);
         }
 
+        function closeSuccessModal() { document.getElementById('success-modal').classList.add('hidden'); }
+
         function sendToTelegramInbox() {
-            let videoIdToSent = currentUnlockedVideoId;
-            
-            if (!videoIdToSent && videosData.length > 0) {
-                videoIdToSent = videosData[0].id;
-            }
-            
+            let videoIdToSent = currentUnlockedVideoId || (videosData.length > 0 ? videosData[0].id : "");
             let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdToSent}`;
             
             if (tg && tg.openTelegramLink) {

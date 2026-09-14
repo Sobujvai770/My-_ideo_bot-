@@ -129,8 +129,8 @@ def run_web():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-# আপনার টোকেন
-BOT_TOKEN = '8787602161:AAGc0LUBXjyLcVhzyAVHzG3jXwA3mSj5F3Y'
+# সিকিউরিটির জন্য Render Environment Variable থেকে টোকেন নেওয়া হবে (অথবা নিচে বসাতে পারেন)
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8787602161:AAHYC1CU5DAmwAa6Lv64VeZNhoUKdL_YLDY")
 bot = telebot.TeleBot(BOT_TOKEN)
 
 @bot.message_handler(commands=['start'])
@@ -151,19 +151,20 @@ def send_welcome(message):
             v_data = db[vid_key]
             
             markup = types.InlineKeyboardMarkup()
-            markup.row(types.InlineKeyboardButton("🎬 Main Channel", callback_data="main_channel_info"))
-            markup.row(types.InlineKeyboardButton("📢 All Channel", callback_data="main_channel_info"))
+            markup.row(types.InlineKeyboardButton("🎬 Watch Full Video / Sponsor", url=v_data.get("ad_link", "https://t.me/")))
+            markup.row(types.InlineKeyboardButton("📢 Main Channel", callback_data="main_channel_info"))
             
             try:
                 sent_msg = bot.send_video(
                     message.chat.id, 
                     v_data["video_file_id"], 
-                    caption=f"{v_data.get('caption', '🔥 প্রিমিয়াম ভিডিও!')}\n\n⏳ ১ ঘন্টা পর অটোমেটিক ভিডিওটি ডিলিট হয়ে যাবে।", 
+                    caption=f"{v_data.get('caption', '🔥 প্রিমিয়াম ভিডিও!')}\n\n⏳ ২ ঘণ্টা পর আপনার ইনবক্স থেকে ভিডিওটি অটোমেটিক ডিলিট হয়ে যাবে।", 
                     reply_markup=markup
                 )
                 
+                # ইউজারের ইনবক্স থেকে নির্দিষ্ট সময় পর (যেমন ২ ঘণ্টা = ৭২০০ সেকেন্ড) ভিডিও ডিলিট করার থ্রেড
                 def delete_later(chat_id, msg_id):
-                    time.sleep(3600)
+                    time.sleep(7200) # ৭২০০ সেকেন্ড = ২ ঘণ্টা
                     try:
                         bot.delete_message(chat_id, msg_id)
                     except:
@@ -194,7 +195,6 @@ def send_welcome(message):
 def callback_main_channel(call):
     bot.answer_callback_query(call.id, "📢 এটি আমাদের অফিসিয়াল চ্যানেল!", show_alert=True)
 
-# আপডেট করা ভিডিও ফাইল আইডি ধরার হ্যান্ডলার (ফরোয়ার্ড ও ডকুমেন্ট সাপোর্ট সহ)
 @bot.message_handler(content_types=['video', 'document'])
 def get_video_id(message):
     try:

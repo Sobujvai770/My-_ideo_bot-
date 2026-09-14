@@ -56,7 +56,9 @@
             </div>
         </div>
 
-        <div id="video-container" class="space-y-4"></div>
+        <div id="video-container" class="space-y-4">
+            <p class="text-center text-xs text-slate-500 py-10">ভিডিও লোড হচ্ছে...</p>
+        </div>
     </main>
 
     <!-- অ্যাডমিন লগইন ও প্যানেল মোডাল -->
@@ -144,33 +146,37 @@
 
         const BOT_USERNAME = "my_video8_bot"; 
 
+        // রেন্ডার ব্যাকএন্ডের সঠিক ডাইনামিক বেস ইউআরএল (ক্যাশ এড়াতে টাইমস্ট্যাম্প যুক্ত করা হয়েছে)
+        const API_BASE = "https://my-ideo-bot.onrender.com";
+
         let videosData = [];
         let videoViews = JSON.parse(localStorage.getItem('my_bot_real_views')) || {};
         let currentUnlockedVideoId = null;
 
-        // সার্ভার থেকে ভিডিও ফেচ করা
+        // সার্ভার থেকে ভিডিও ফেচ করা (ক্যাশ এড়াতে ?t=timestamp ব্যবহার করা হয়েছে)
         async function fetchVideosFromBackend() {
             try {
-                let response = await fetch('https://my-ideo-bot.onrender.com/api/get-videos');
+                let response = await fetch(`${API_BASE}/api/get-videos?t=` + new Date().getTime());
                 let data = await response.json();
                 
-                // অবজেক্ট থেকে অ্যারেতে রূপান্তর করা
+                // অবজেক্ট থেকে অ্যারেতে রূপান্তর করা (নতুন ভিডিওগুলো আগে দেখানোর জন্য reverse করা হয়েছে)
                 videosData = Object.keys(data).map(key => ({
                     id: key,
                     ...data[key]
-                }));
+                })).reverse();
                 
                 renderVideos();
                 renderAdminVideoList();
             } catch (err) {
                 console.error("Failed to fetch videos:", err);
+                document.getElementById('video-container').innerHTML = `<p class="text-center text-xs text-red-400 py-10">সার্ভার থেকে ডেটা লোড করতে সমস্যা হয়েছে!</p>`;
             }
         }
 
         // বটের ইউজার স্ট্যাটিস্টিক্স ফেচ করা
         async function fetchBotStats() {
             try {
-                let response = await fetch('https://my-ideo-bot.onrender.com/api/bot-stats');
+                let response = await fetch(`${API_BASE}/api/bot-stats?t=` + new Date().getTime());
                 let stats = await response.json();
                 document.getElementById('stat-total-users').innerText = stats.total_users + " জন";
                 document.getElementById('stat-total-videos').innerText = stats.total_videos;
@@ -179,6 +185,7 @@
             }
         }
 
+        // পেজ লোড হওয়ার সাথে সাথেই কল হবে
         fetchVideosFromBackend();
 
         function renderVideos() {
@@ -206,7 +213,7 @@
                             <div class="absolute top-2 right-2 bg-black/70 text-yellow-400 px-2 py-0.5 rounded text-[10px] font-bold z-10">
                                 ${video.parts || '2 Parts'}
                             </div>
-                            <img src="${video.thumbnail || video.thumb_link}" class="w-full h-full object-cover">
+                            <img src="${video.thumb_link || video.thumbnail}" class="w-full h-full object-cover">
                             
                             <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded-md text-[11px] flex items-center space-x-1 text-slate-200">
                                 <span>👁️</span>
@@ -244,7 +251,7 @@
             if(pass === "17906780Ss") {
                 document.getElementById('admin-login-box').classList.add('hidden');
                 document.getElementById('admin-panel-box').classList.remove('hidden');
-                fetchBotStats(); // প্যানেল খুললেই ইউজার কাউন্ট লোড হবে
+                fetchBotStats(); 
                 renderAdminVideoList();
             } else {
                 alert("ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন।");
@@ -252,11 +259,11 @@
         }
 
         async function addNewVideo() {
-            let thumb = document.getElementById('inp-thumb').value;
-            let caption = document.getElementById('inp-caption').value;
-            let fileId = document.getElementById('inp-videourl').value;
-            let adUrl = document.getElementById('inp-adurl').value;
-            let parts = document.getElementById('inp-parts').value;
+            let thumb = document.getElementById('inp-thumb').value.trim();
+            let caption = document.getElementById('inp-caption').value.trim();
+            let fileId = document.getElementById('inp-videourl').value.trim();
+            let adUrl = document.getElementById('inp-adurl').value.trim();
+            let parts = document.getElementById('inp-parts').value.trim();
             let videoId = Date.now().toString();
 
             if(!thumb || !fileId || !adUrl) {
@@ -266,7 +273,7 @@
 
             let newVideo = {
                 id: videoId,
-                parts: parts,
+                parts: parts || "2 Parts",
                 thumbnail: thumb,
                 caption: caption || "নিউ ভাইরাল ভিডিও 💋",
                 file_id: fileId,
@@ -275,7 +282,7 @@
             };
 
             try {
-                let response = await fetch('https://my-ideo-bot.onrender.com/api/save-video', {
+                let response = await fetch(`${API_BASE}/api/save-video`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(newVideo)
@@ -288,8 +295,10 @@
                     document.getElementById('inp-caption').value = '';
                     document.getElementById('inp-videourl').value = '';
                     document.getElementById('inp-adurl').value = '';
-                    fetchVideosFromBackend();
-                    fetchBotStats();
+                    
+                    // সাথে সাথে ডাটা রিফ্রেশ করে হোমপেজে ও প্যানেলে দেখাবে
+                    await fetchVideosFromBackend();
+                    await fetchBotStats();
                 } else {
                     alert("সার্ভারে সেভ করতে সমস্যা হয়েছে: " + result.message);
                 }
@@ -298,7 +307,6 @@
             }
         }
 
-        // অ্যাডমিন প্যানেলে ভিডিও লিস্ট ও ডিলিট বাটন রেন্ডার করা
         function renderAdminVideoList() {
             const listContainer = document.getElementById('admin-video-list');
             listContainer.innerHTML = '';
@@ -313,7 +321,7 @@
                 item.className = "flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800";
                 item.innerHTML = `
                     <div class="flex items-center space-x-2 overflow-hidden mr-2">
-                        <img src="${video.thumbnail || video.thumb_link}" class="w-8 h-8 rounded object-cover shrink-0">
+                        <img src="${video.thumb_link || video.thumbnail}" class="w-8 h-8 rounded object-cover shrink-0">
                         <p class="text-[11px] text-slate-300 truncate">${video.caption}</p>
                     </div>
                     <button onclick="deleteVideo('${video.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-[10px] shrink-0 transition">ডিলিট</button>
@@ -322,18 +330,17 @@
             });
         }
 
-        // নির্দিষ্ট ভিডিও ডিলিট করার ফাংশন
         async function deleteVideo(id) {
             if (confirm("এই ভিডিওটি কি সত্যি ডিলিট করতে চান?")) {
                 try {
-                    let response = await fetch(`https://my-ideo-bot.onrender.com/api/delete-video/${id}`, {
+                    let response = await fetch(`${API_BASE}/api/delete-video/${id}`, {
                         method: 'DELETE'
                     });
                     let result = await response.json();
                     if (response.ok) {
                         alert("ভিডিও সফলভাবে ডিলিট করা হয়েছে!");
-                        fetchVideosFromBackend();
-                        fetchBotStats();
+                        await fetchVideosFromBackend();
+                        await fetchBotStats();
                     } else {
                         alert("ডিলিট করতে সমস্যা হয়েছে: " + result.message);
                     }
@@ -403,7 +410,7 @@
             let videoIdToSent = currentUnlockedVideoId;
             
             if (!videoIdToSent && videosData.length > 0) {
-                videoIdToSent = videosData[0].id;
+                videoIdToSent = videosData.id;
             }
             
             let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdToSent}`;

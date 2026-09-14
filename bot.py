@@ -41,20 +41,23 @@ def save_users(users):
 def home():
     return "Bot and API are running and alive!"
 
-# বটের ইউজার ও ভিডিও স্ট্যাটিস্টিক্স দেখার এপিআই
 @app.route('/api/bot-stats', methods=['GET'])
 def bot_stats():
     users = load_users()
     db = load_db()
-    return jsonify({
+    res = jsonify({
         "total_users": len(users),
         "total_videos": len(db)
-    }), 200
+    })
+    res.headers.add("Access-Control-Allow-Origin", "*")
+    return res, 200
 
 @app.route('/api/get-videos', methods=['GET'])
 def get_videos():
     db = load_db()
-    return jsonify(db), 200
+    res = jsonify(db)
+    res.headers.add("Access-Control-Allow-Origin", "*")
+    return res, 200
 
 @app.route('/api/save-video', methods=['POST', 'OPTIONS'])
 def save_video():
@@ -97,7 +100,6 @@ def save_video():
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 500
 
-# নির্দিষ্ট ভিডিও ডিলিট করার এপিআই
 @app.route('/api/delete-video/<video_id>', methods=['DELETE', 'OPTIONS'])
 def delete_video(video_id):
     if request.method == 'OPTIONS':
@@ -127,8 +129,8 @@ def run_web():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-# নতুন আপডেট করা টোকেন এখানে বসানো হলো
-BOT_TOKEN = '8787602161:AAHWJqnNKQd3EoXe8kEhoXYeQeXqY-fjm_Y'
+# আপনার নতুন টোকেন এখানে সেট করা হলো
+BOT_TOKEN = '8787602161:AAGc0LUBXjyLcVhzyAVHzG3jXwA3mSj5F3Y'
 bot = telebot.TeleBot(BOT_TOKEN)
 
 @bot.message_handler(commands=['start'])
@@ -136,7 +138,6 @@ def send_welcome(message):
     user_id = message.from_user.id
     users = load_users()
     
-    # নতুন ইউজার স্টার্ট করলে লিস্টে কাউন্ট করার জন্য সেভ হবে
     if user_id not in users:
         users.append(user_id)
         save_users(users)
@@ -150,13 +151,27 @@ def send_welcome(message):
             v_data = db[vid_key]
             
             markup = types.InlineKeyboardMarkup()
-            if v_data.get("ad_link"):
-                markup.row(types.InlineKeyboardButton("🎬 Watch Full Video / Sponsor", url=v_data["ad_link"]))
-            
-            markup.row(types.InlineKeyboardButton("📢 Main Channel", callback_data="main_channel_info"))
+            markup.row(types.InlineKeyboardButton("🎬 Main Channel", callback_data="main_channel_info"))
+            markup.row(types.InlineKeyboardButton("📢 All Channel", callback_data="main_channel_info"))
             
             try:
-                bot.send_video(message.chat.id, v_data["video_file_id"], caption=v_data.get("caption", "🔥 প্রিমিয়াম ভিডিও!"), reply_markup=markup)
+                sent_msg = bot.send_video(
+                    message.chat.id, 
+                    v_data["video_file_id"], 
+                    caption=f"{v_data.get('caption', '🔥 প্রিমিয়াম ভিডিও!')}\n\n⏳ ১ ঘন্টা পর অটোমেটিক ভিডিওটি ডিলিট হয়ে যাবে।", 
+                    reply_markup=markup
+                )
+                
+                # ব্যাকগ্রাউন্ডে থ্রেড চালিয়ে নির্দিষ্ট সময় (যেমন ৩০০০ সেকেন্ড বা ১ ঘন্টা) পর ভিডিওটি ডিলিট করার ব্যবস্থা
+                def delete_later(chat_id, msg_id):
+                    time.sleep(3600) # ১ ঘন্টা = ৩৬০০ সেকেন্ড
+                    try:
+                        bot.delete_message(chat_id, msg_id)
+                    except:
+                        pass
+                
+                threading.Thread(target=delete_later, args=(message.chat.id, sent_msg.message_id)).start()
+
             except Exception as e:
                 bot.send_message(message.chat.id, "⚠️ ভিডিও পাঠাতে সমস্যা হয়েছে বা ফাইল আইডি ভুল আছে।")
             return
@@ -178,7 +193,7 @@ def send_welcome(message):
 
 @bot.callback_query_handler(func=lambda call: call.data == "main_channel_info")
 def callback_main_channel(call):
-    bot.answer_callback_query(call.id, "📢 এটি আমাদের অফিসিয়াল মেইন চ্যানেল!", show_alert=True)
+    bot.answer_callback_query(call.id, "📢 এটি আমাদের অফিসিয়াল চ্যানেল!", show_alert=True)
 
 @bot.message_handler(content_types=['video'])
 def get_video_id(message):

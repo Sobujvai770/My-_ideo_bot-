@@ -9,6 +9,7 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 DB_FILE = "videos.json"
+USERS_FILE = "users.json"
 
 def load_db():
     if os.path.exists(DB_FILE):
@@ -23,11 +24,33 @@ def save_db(data):
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
+def load_users():
+    if os.path.exists(USERS_FILE):
+        with open(USERS_FILE, "r", encoding="utf-8") as f:
+            try:
+                return json.load(f)
+            except:
+                return []
+    return []
+
+def save_users(users):
+    with open(USERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(users, f, ensure_ascii=False, indent=4)
+
 @app.route('/')
 def home():
     return "Bot and API are running and alive!"
 
-# ডাটাবেজ চেক করার জন্য সহজে দেখার রুট (যদি প্রয়োজন হয়)
+# বটের ইউজার ও ভিডিও স্ট্যাটিস্টিক্স দেখার এপিআই
+@app.route('/api/bot-stats', methods=['GET'])
+def bot_stats():
+    users = load_users()
+    db = load_db()
+    return jsonify({
+        "total_users": len(users),
+        "total_videos": len(db)
+    }), 200
+
 @app.route('/api/get-videos', methods=['GET'])
 def get_videos():
     db = load_db()
@@ -39,7 +62,7 @@ def save_video():
         response = jsonify({'status': 'OK'})
         response.headers.add("Access-Control-Allow-Origin", "*")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type")
-        response.headers.add("Access-Control-Allow-Methods", "POST")
+        response.headers.add("Access-Control-Allow-Methods", "POST, DELETE")
         return response
 
     try:
@@ -49,6 +72,7 @@ def save_video():
         caption = req_data.get("caption", "🔥 প্রিমিয়াম ভিডিও!")
         ad_link = req_data.get("ad_link", "")
         thumb_link = req_data.get("thumb_link", "")
+        parts = req_data.get("parts", "2 Parts")
 
         if not video_id or not file_id:
             res = jsonify({"status": "error", "message": "Video ID and File ID are required!"})
@@ -60,7 +84,8 @@ def save_video():
             "video_file_id": file_id,
             "caption": caption,
             "ad_link": ad_link,
-            "thumb_link": thumb_link
+            "thumb_link": thumb_link,
+            "parts": parts
         }
         save_db(db)
 
@@ -72,23 +97,55 @@ def save_video():
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 500
 
+# নির্দিষ্ট ভিডিও ডিলিট করার এপিআই
+@app.route('/api/delete-video/<video_id>', methods=['DELETE', 'OPTIONS'])
+def delete_video(video_id):
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'OK'})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "DELETE")
+        return response
+
+    try:
+        db = load_db()
+        if video_id in db:
+            del db[video_id]
+            save_db(db)
+            res = jsonify({"status": "success", "message": "Video deleted successfully!"})
+        else:
+            res = jsonify({"status": "error", "message": "Video not found!"})
+        
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 200
+    except Exception as e:
+        res = jsonify({"status": "error", "message": str(e)})
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 500
+
 def run_web():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-BOT_TOKEN = '8787602161:AAEnBbGJxxukqXjIdeBYjD7oWUzLkT9vbJY'
+# নতুন আপডেট করা টোকেন এখানে বসানো হলো
+BOT_TOKEN = '8787602161:AAHWJqnNKQd3EoXe8kEhoXYeQeXqY-fjm_Y'
 bot = telebot.TeleBot(BOT_TOKEN)
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
+    user_id = message.from_user.id
+    users = load_users()
+    
+    # নতুন ইউজার স্টার্ট করলে লিস্টে কাউন্ট করার জন্য সেভ হবে
+    if user_id not in users:
+        users.append(user_id)
+        save_users(users)
+
     command_args = message.text.split()
     db = load_db()
     
-    # ইনপুটে যদি কোনো ভিডিও আইডি বা পেলোড থাকে
     if len(command_args) > 1:
         vid_key = str(command_args[1]).strip()
-        
-        # ডাটাবেজে আইডি মিলে গেলে সরাসরি ভিডিও পাঠিয়ে দিবে
         if vid_key in db:
             v_data = db[vid_key]
             
@@ -101,14 +158,12 @@ def send_welcome(message):
             try:
                 bot.send_video(message.chat.id, v_data["video_file_id"], caption=v_data.get("caption", "🔥 প্রিমিয়াম ভিডিও!"), reply_markup=markup)
             except Exception as e:
-                bot.send_message(message.chat.id, f"⚠️ ভিডিও পাঠাতে সমস্যা হয়েছে বা ফাইল আইডি ভুল আছে।\nএরর: {e}")
+                bot.send_message(message.chat.id, "⚠️ ভিডিও পাঠাতে সমস্যা হয়েছে বা ফাইল আইডি ভুল আছে।")
             return
         else:
-            # যদি ডাটাবেজে আইডিটি না থাকে, তবে ইউজারকে জানিয়ে দিবে
-            bot.send_message(message.chat.id, "⚠️ দুঃখিত! এই ভিডিওটির ডেটা সার্ভারে পাওয়া যায়নি বা ডিলিট হয়ে গেছে। দয়া করে মিনি অ্যাপ থেকে অন্য ভিডিও ট্রাই করুন।")
+            bot.send_message(message.chat.id, "⚠️ দুঃখিত! এই ভিডিওটির ডেটা সার্ভারে পাওয়া যায়নি বা ডিলিট হয়ে গেছে।")
             return
 
-    # সাধারণ ওয়েলকাম মেসেজ ও মিনি অ্যাপ ওপেন করার বাটন
     web_app_url = "https://sobujvai770.github.io/My-_ideo_bot-/" 
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("🎬 Watch Now (Web App)", web_app=types.WebAppInfo(url=web_app_url)))

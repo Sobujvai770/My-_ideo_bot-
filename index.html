@@ -70,7 +70,18 @@
                 <button onclick="checkAdminPassword()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 rounded-lg text-xs transition">লগইন করুন</button>
             </div>
 
-            <div id="admin-panel-box" class="hidden space-y-3">
+            <div id="admin-panel-box" class="hidden space-y-4">
+                <!-- ইউজার স্ট্যাটিস্টিক্স কার্ড -->
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700">
+                    <h3 class="font-bold text-xs text-yellow-400 mb-2">📊 বটের লাইভ স্ট্যাটিস্টিক্স</h3>
+                    <div class="flex justify-between text-xs text-slate-300">
+                        <span>মোট স্টার্ট ইউজার: <strong id="stat-total-users" class="text-emerald-400">লোড হচ্ছে...</strong></span>
+                        <span>মোট ভিডিও: <strong id="stat-total-videos" class="text-orange-400">0</strong></span>
+                    </div>
+                </div>
+
+                <hr class="border-slate-700">
+
                 <h3 class="font-bold text-sm text-emerald-400 mb-2">🛠️ নতুন ভিডিও আপলোড করুন</h3>
                 <div>
                     <label class="text-[11px] text-slate-400">থাম্বনেইল পিকের ডাইরেক্ট লিংক:</label>
@@ -95,7 +106,10 @@
                 <button onclick="addNewVideo()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-xs transition shadow-md mt-2">সংরক্ষণ করুন (Publish)</button>
                 
                 <hr class="border-slate-700 my-3">
-                <button onclick="clearAllVideos()" class="w-full bg-red-600/80 hover:bg-red-700 text-white py-1.5 rounded-lg text-[11px] transition">সব ভিডিও ডিলিট করুন</button>
+                
+                <!-- ভিডিও ম্যানেজমেন্ট ও ডিলিট সেকশন -->
+                <h3 class="font-bold text-xs text-red-400 mb-2">🗑️ ভিডিও ম্যানেজমেন্ট (ডিলিট করুন)</h3>
+                <div id="admin-video-list" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
             </div>
         </div>
     </div>
@@ -128,24 +142,44 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        const BOT_USERNAME = "my_video8_bot"; // আপনার টেলিগ্রাম বটের ইউজারনেম
+        const BOT_USERNAME = "my_video8_bot"; 
 
-        let defaultVideos = [
-            {
-                id: "1700000001",
-                parts: "2 Parts",
-                thumbnail: "https://files.catbox.moe/apifn2.jpeg",
-                caption: "সেই একটা মাল দুধ গুলোর দেখার মতন ভিডিও",
-                views: 342,
-                file_id: "BAACAgUAAyEFAAMBASF0UQADBGqmefvs9O-p30r2InMhLQmpVFMYAAKeJAACQ884VbmCjnrP1-kNPQQ",
-                ad_link: "https://pl31154034.profitablecaterpanetwork.com/82/2a/84/822a8441faf0c6e471f49615a9d36232",
-                thumb_link: "https://files.catbox.moe/apifn2.jpeg"
-            }
-        ];
-
-        let videosData = JSON.parse(localStorage.getItem('my_bot_videos')) || defaultVideos;
+        let videosData = [];
         let videoViews = JSON.parse(localStorage.getItem('my_bot_real_views')) || {};
         let currentUnlockedVideoId = null;
+
+        // সার্ভার থেকে ভিডিও ফেচ করা
+        async function fetchVideosFromBackend() {
+            try {
+                let response = await fetch('https://my-ideo-bot.onrender.com/api/get-videos');
+                let data = await response.json();
+                
+                // অবজেক্ট থেকে অ্যারেতে রূপান্তর করা
+                videosData = Object.keys(data).map(key => ({
+                    id: key,
+                    ...data[key]
+                }));
+                
+                renderVideos();
+                renderAdminVideoList();
+            } catch (err) {
+                console.error("Failed to fetch videos:", err);
+            }
+        }
+
+        // বটের ইউজার স্ট্যাটিস্টিক্স ফেচ করা
+        async function fetchBotStats() {
+            try {
+                let response = await fetch('https://my-ideo-bot.onrender.com/api/bot-stats');
+                let stats = await response.json();
+                document.getElementById('stat-total-users').innerText = stats.total_users + " জন";
+                document.getElementById('stat-total-videos').innerText = stats.total_videos;
+            } catch (err) {
+                document.getElementById('stat-total-users').innerText = "অরক্ষিত";
+            }
+        }
+
+        fetchVideosFromBackend();
 
         function renderVideos() {
             const container = document.getElementById('video-container');
@@ -158,7 +192,7 @@
 
             videosData.forEach(video => {
                 if (videoViews[video.id] === undefined) {
-                    videoViews[video.id] = video.views || Math.floor(Math.random() * 200) + 300;
+                    videoViews[video.id] = Math.floor(Math.random() * 200) + 300;
                 }
                 
                 let totalViews = videoViews[video.id];
@@ -194,8 +228,6 @@
             localStorage.setItem('my_bot_real_views', JSON.stringify(videoViews));
         }
 
-        renderVideos();
-
         function checkAdminAccess() {
             document.getElementById('admin-modal').classList.remove('hidden');
             document.getElementById('admin-login-box').classList.remove('hidden');
@@ -212,6 +244,8 @@
             if(pass === "17906780Ss") {
                 document.getElementById('admin-login-box').classList.add('hidden');
                 document.getElementById('admin-panel-box').classList.remove('hidden');
+                fetchBotStats(); // প্যানেল খুললেই ইউজার কাউন্ট লোড হবে
+                renderAdminVideoList();
             } else {
                 alert("ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন।");
             }
@@ -235,7 +269,6 @@
                 parts: parts,
                 thumbnail: thumb,
                 caption: caption || "নিউ ভাইরাল ভিডিও 💋",
-                views: Math.floor(Math.random() * 200) + 150,
                 file_id: fileId,
                 ad_link: adUrl,
                 thumb_link: thumb
@@ -244,41 +277,69 @@
             try {
                 let response = await fetch('https://my-ideo-bot.onrender.com/api/save-video', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(newVideo)
                 });
 
                 let result = await response.json();
-                if (!response.ok) {
+                if (response.ok) {
+                    alert("সফলভাবে নতুন ভিডিও সার্ভারে যুক্ত হয়েছে!");
+                    document.getElementById('inp-thumb').value = '';
+                    document.getElementById('inp-caption').value = '';
+                    document.getElementById('inp-videourl').value = '';
+                    document.getElementById('inp-adurl').value = '';
+                    fetchVideosFromBackend();
+                    fetchBotStats();
+                } else {
                     alert("সার্ভারে সেভ করতে সমস্যা হয়েছে: " + result.message);
-                    return;
                 }
             } catch (err) {
-                console.error("API Error:", err);
                 alert("সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি!");
+            }
+        }
+
+        // অ্যাডমিন প্যানেলে ভিডিও লিস্ট ও ডিলিট বাটন রেন্ডার করা
+        function renderAdminVideoList() {
+            const listContainer = document.getElementById('admin-video-list');
+            listContainer.innerHTML = '';
+
+            if (videosData.length === 0) {
+                listContainer.innerHTML = `<p class="text-[11px] text-slate-500">কোনো ভিডিও নেই।</p>`;
                 return;
             }
 
-            videosData.unshift(newVideo);
-            localStorage.setItem('my_bot_videos', JSON.stringify(videosData));
-            
-            videoViews[videoId] = newVideo.views;
-            localStorage.setItem('my_bot_real_views', JSON.stringify(videoViews));
-
-            renderVideos();
-            closeAdminModal();
-            alert("সফলভাবে নতুন ভিডিও সার্ভারে এবং অ্যাপে যুক্ত হয়েছে!");
+            videosData.forEach(video => {
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800";
+                item.innerHTML = `
+                    <div class="flex items-center space-x-2 overflow-hidden mr-2">
+                        <img src="${video.thumbnail || video.thumb_link}" class="w-8 h-8 rounded object-cover shrink-0">
+                        <p class="text-[11px] text-slate-300 truncate">${video.caption}</p>
+                    </div>
+                    <button onclick="deleteVideo('${video.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-[10px] shrink-0 transition">ডিলিট</button>
+                `;
+                listContainer.appendChild(item);
+            });
         }
 
-        function clearAllVideos() {
-            if(confirm("সব ভিডিও ডিলিট করতে চান?")) {
-                videosData = [];
-                localStorage.removeItem('my_bot_videos');
-                localStorage.removeItem('my_bot_real_views');
-                renderVideos();
-                closeAdminModal();
+        // নির্দিষ্ট ভিডিও ডিলিট করার ফাংশন
+        async function deleteVideo(id) {
+            if (confirm("এই ভিডিওটি কি সত্যি ডিলিট করতে চান?")) {
+                try {
+                    let response = await fetch(`https://my-ideo-bot.onrender.com/api/delete-video/${id}`, {
+                        method: 'DELETE'
+                    });
+                    let result = await response.json();
+                    if (response.ok) {
+                        alert("ভিডিও সফলভাবে ডিলিট করা হয়েছে!");
+                        fetchVideosFromBackend();
+                        fetchBotStats();
+                    } else {
+                        alert("ডিলিট করতে সমস্যা হয়েছে: " + result.message);
+                    }
+                } catch (err) {
+                    alert("সার্ভার এরর! ডিলিট করা যায়নি।");
+                }
             }
         }
 

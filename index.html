@@ -30,25 +30,21 @@
 </head>
 <body class="bg-[#0f172a] text-white min-h-screen font-sans pb-10">
 
-    <!-- স্প্ল্যাশ স্ক্রিন -->
     <div id="splash-screen">
         <img src="https://files.catbox.moe/apifn2.jpeg" class="w-24 h-24 rounded-full object-cover border-2 border-orange-500 shadow-2xl animate-pulse">
         <h2 class="text-orange-500 font-bold text-lg mt-3">My Video Bot Hub</h2>
         <p class="text-xs text-slate-400 mt-1">লোড হচ্ছে, একটু অপেক্ষা করুন...</p>
     </div>
 
-    <!-- টপ হেডার -->
     <header class="flex items-center justify-between px-4 py-3 bg-[#1e293b] border-b border-slate-800 sticky top-0 z-50">
         <div class="flex items-center space-x-2">
             <span class="text-orange-500 font-bold text-lg">🔥 My Video Bot Hub</span>
         </div>
         <div>
-            <!-- শুধু নির্দিষ্ট অ্যাডমিন আইডি মিললে তবেই প্যানেল খুলবে -->
             <button onclick="checkAdminAccess()" class="bg-slate-700 hover:bg-slate-600 w-8 h-8 rounded-lg text-slate-200 transition flex items-center justify-center text-sm">⚙️</button>
         </div>
     </header>
 
-    <!-- মূল ভিডিও ফিড -->
     <main class="p-4 max-w-md mx-auto space-y-4">
         <div class="flex items-center justify-between text-yellow-400 font-semibold text-sm">
             <div class="flex items-center space-x-1">
@@ -62,7 +58,6 @@
         </div>
     </main>
 
-    <!-- অ্যাডমিন লগইন ও প্যানেল মোডাল -->
     <div id="admin-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-5 border border-slate-700 relative shadow-2xl max-h-[90vh] overflow-y-auto">
             <button onclick="closeAdminModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold text-lg">✕</button>
@@ -115,7 +110,6 @@
         </div>
     </div>
 
-    <!-- ভিডিও আনলক ও টাইমার পপআপ মোডাল -->
     <div id="unlock-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-4 border border-slate-700 relative shadow-2xl">
             <button onclick="closeModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold text-lg bg-slate-800 w-7 h-7 rounded-full flex items-center justify-center">✕</button>
@@ -125,7 +119,6 @@
         </div>
     </div>
 
-    <!-- বিজ্ঞাপন ও টাইমার কাউন্টডাউন মোডাল -->
     <div id="ad-timer-modal" class="fixed inset-0 bg-black/85 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-5 border border-slate-700 text-center relative shadow-2xl">
             <h3 class="font-bold text-sm text-yellow-400 mb-2">⏳ Unlock Video</h3>
@@ -144,14 +137,13 @@
         </div>
     </div>
 
-    <!-- সফল আনলক পপআপ -->
     <div id="success-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-white text-slate-900 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl text-center">
             <button onclick="closeSuccessModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-800 font-bold text-lg bg-slate-100 w-7 h-7 rounded-full flex items-center justify-center">✕</button>
             
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4 font-bold">✓</div>
             <h3 class="font-bold text-lg text-slate-800 mb-2">আনলক সম্পন্ন হয়েছে!</h3>
-            <p class="text-xs text-slate-600 mb-6 leading-relaxed">নিচের বাটনটি ক্লিক করলে ভিডিওটি সরাসরি আপনার টেলিগ্রাম ইনবক্সে চলে যাবে। এটি কিছুক্ষণ পর অটোমেটিক ডিলিট হয়ে যাবে।</p>
+            <p class="text-xs text-slate-600 mb-6 leading-relaxed">নিচের বাটনটি ক্লিক করলে ভিডিওটি সরাসরি আপনার টেলিগ্রাম ইনবক্সে চলে যাবে। এটি ২ ঘণ্টা পর ইনবক্স থেকে অটোমেটিক ডিলিট হয়ে যাবে।</p>
             <button onclick="sendToTelegramInbox()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-2xl text-sm transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/30">
                 <span>📥 ইনবক্সে পাঠান</span>
             </button>
@@ -165,7 +157,7 @@
         const BOT_USERNAME = "my_video8_bot"; 
         const API_BASE = "https://my-ideo-bot.onrender.com";
         
-        // আপনার দেওয়া দুটি টেলিগ্রাম আইডি এখানে অ্যাডমিন হিসেবে যুক্ত করা হলো
+        // এখানে আপনার দুটি আইডি অ্যাডমিন হিসেবে সেট করা আছে
         const ADMIN_TELEGRAM_IDS = [8326665891, 8518594452];
 
         let videosData = [];
@@ -244,19 +236,19 @@
             localStorage.setItem('my_bot_real_views', JSON.stringify(videoViews));
         }
 
-        // দুটি অ্যাডমিন আইডি চেক করার ফাংশন
+        // অ্যাডমিন আইডি চেক করার ফাংশন
         function checkAdminAccess() {
             let currentUserId = null;
             if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 currentUserId = tg.initDataUnsafe.user.id;
             }
 
-            // সাধারণ ইউজার হলে সাইলেন্ট থাকবে, কোনো পপআপ দেখাবে না
+            // সাধারণ ইউজার হলে সাইলেন্ট থাকবে, কিছু দেখাবে না
             if (!ADMIN_TELEGRAM_IDS.includes(currentUserId)) {
                 return; 
             }
 
-            // অ্যাডমিন হলে পাসওয়ার্ড ও প্যানেল মোডাল খুলবে
+            // অ্যাডমিন হলে প্যানেল খুলবে
             document.getElementById('admin-modal').classList.remove('hidden');
             document.getElementById('admin-login-box').classList.remove('hidden');
             document.getElementById('admin-panel-box').classList.add('hidden');

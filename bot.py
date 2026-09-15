@@ -1,63 +1,51 @@
 import os
-import json
 import threading
 import time
 import telebot
 from telebot import types
 from flask import Flask, request, jsonify
+from pymongo import MongoClient
 
 app = Flask(__name__)
 
-DB_FILE = "videos.json"
-USERS_FILE = "users.json"
-
-def load_db():
-    if os.path.exists(DB_FILE):
-        with open(DB_FILE, "r", encoding="utf-8") as f:
-            try:
-                return json.load(f)
-            except:
-                return {}
-    return {}
-
-def save_db(data):
-    with open(DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
-def load_users():
-    if os.path.exists(USERS_FILE):
-        with open(USERS_FILE, "r", encoding="utf-8") as f:
-            try:
-                return json.load(f)
-            except:
-                return []
-    return []
-
-def save_users(users):
-    with open(USERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(users, f, ensure_ascii=False, indent=4)
+# MongoDB কানেকশন সেটআপ (Render-এর Environment Variable থেকে নিবে)
+MONGO_URI = os.environ.get("MONGO_URI", "your_mongodb_connection_string_here")
+client = MongoClient(MONGO_URI)
+db = client["my_video_bot_db"]
+videos_collection = db["videos"]
+users_collection = db["users"]
 
 @app.route('/')
 def home():
-    return "Bot and API are running and alive!"
+    return "Bot and MongoDB API are running and alive!"
 
 @app.route('/api/bot-stats', methods=['GET'])
 def bot_stats():
-    users = load_users()
-    db = load_db()
-    res = jsonify({
-        "total_users": len(users),
-        "total_videos": len(db)
-    })
-    res.headers.add("Access-Control-Allow-Origin", "*")
-    return res, 200
+    try:
+        total_users = users_collection.count_documents({})
+        total_videos = videos_collection.count_documents({})
+        res = jsonify({
+            "total_users": total_users,
+            "total_videos": total_videos
+        })
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 200
+    except Exception as e:
+        return jsonify({"total_users": 0, "total_videos": 0}), 200
 
 @app.route('/api/get-videos', methods=['GET'])
 def get_videos():
-    db = load_db()
-    res = jsonify(db)
-    res.headers.add("Access-Control-Allow-Origin", "*")
-    return res, 200
+    try:
+        all_videos = list(videos_collection.find({}, {"_id": 0}))
+        # ডাটাবেজ থেকে রিভার্স করে পাঠানো যাতে নতুন ভিডিও উপরে থাকে
+        videos_dict = {v["id"]: v for v in reversed(all_videos)}
+        res = jsonify(videos_dict)
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 200
+    except Exception as e:
+        res = jsonify({})
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 200
 
 @app.route('/api/save-video', methods=['POST', 'OPTIONS'])
 def save_video():
@@ -82,17 +70,19 @@ def save_video():
             res.headers.add("Access-Control-Allow-Origin", "*")
             return res, 400
 
-        db = load_db()
-        db[video_id] = {
+        video_doc = {
+            "id": video_id,
             "video_file_id": file_id,
             "caption": caption,
             "ad_link": ad_link,
             "thumb_link": thumb_link,
             "parts": parts
         }
-        save_db(db)
 
-        res = jsonify({"status": "success", "message": "Video saved successfully!"})
+        # MongoDB-তে আপসর্ট (না থাকলে ইনসার্ট হবে, থাকলে আপডেট হবে)
+        videos_collection.update_one({"id": video_id}, {"$set": video_doc}, upsert=True)
+
+        res = jsonify({"status": "success", "message": "Video saved to MongoDB successfully!"})
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 200
     except Exception as e:
@@ -110,10 +100,8 @@ def delete_video(video_id):
         return response
 
     try:
-        db = load_db()
-        if video_id in db:
-            del db[video_id]
-            save_db(db)
+        result = videos_collection.delete_one({"id": video_id})
+        if result.deleted_count > 0:
             res = jsonify({"status": "success", "message": "Video deleted successfully!"})
         else:
             res = jsonify({"status": "error", "message": "Video not found!"})
@@ -135,20 +123,18 @@ bot = telebot.TeleBot(BOT_TOKEN)
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     user_id = message.from_user.id
-    users = load_users()
     
-    if user_id not in users:
-        users.append(user_id)
-        save_users(users)
+    # MongoDB-তে ইউজার সেভ করা
+    if not users_collection.find_one({"user_id": user_id}):
+        users_collection.insert_one({"user_id": user_id})
 
     command_args = message.text.split()
-    db = load_db()
     
     if len(command_args) > 1:
         vid_key = str(command_args[1]).strip()
-        if vid_key in db:
-            v_data = db[vid_key]
-            
+        v_data = videos_collection.find_one({"id": vid_key})
+        
+        if v_data:
             markup = types.InlineKeyboardMarkup()
             markup.row(types.InlineKeyboardButton("🎬 Watch Full Video / Sponsor", url=v_data.get("ad_link", "https://t.me/")))
             markup.row(types.InlineKeyboardButton("📢 Main Channel", callback_data="main_channel_info"))
@@ -208,7 +194,7 @@ def get_video_id(message):
         bot.reply_to(message, f"⚠️ ফাইল আইডি পেতে সমস্যা হয়েছে: {str(e)}")
 
 def run_bot():
-    print("Bot is running...")
+    print("Bot is running with MongoDB...")
     while True:
         try:
             bot.infinity_polling(skip_pending=True, timeout=60, long_polling_timeout=30)

@@ -157,7 +157,6 @@
         const BOT_USERNAME = "my_video8_bot"; 
         const API_BASE = "https://my-ideo-bot.onrender.com";
         
-        // এখানে আপনার দুটি আইডি অ্যাডমিন হিসেবে সেট করা আছে
         const ADMIN_TELEGRAM_IDS = [8326665891, 8518594452];
 
         let videosData = [];
@@ -225,7 +224,8 @@
                         <div class="flex items-center justify-between mt-3">
                             <div class="flex items-center space-x-2 flex-1 mr-2">
                                 <div class="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center font-bold text-[10px] shrink-0">TB</div>
-                                <p class="text-xs font-medium text-slate-200 line-clamp-1">${video.caption}</p>
+                                <!-- ক্যাপশন যাতে সম্পূর্ণ দেখা যায় এবং কেটে না যায় (line-clamp ہঠিয়ে দেওয়া হয়েছে) -->
+                                <p class="text-xs font-medium text-slate-200 leading-relaxed">${video.caption}</p>
                             </div>
                             <div class="bg-red-600 p-1.5 rounded-full text-white text-xs shrink-0">▶</div>
                         </div>
@@ -236,19 +236,16 @@
             localStorage.setItem('my_bot_real_views', JSON.stringify(videoViews));
         }
 
-        // অ্যাডমিন আইডি চেক করার ফাংশন
         function checkAdminAccess() {
             let currentUserId = null;
             if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 currentUserId = tg.initDataUnsafe.user.id;
             }
 
-            // সাধারণ ইউজার হলে সাইলেন্ট থাকবে, কিছু দেখাবে না
             if (!ADMIN_TELEGRAM_IDS.includes(currentUserId)) {
                 return; 
             }
 
-            // অ্যাডমিন হলে প্যানেল খুলবে
             document.getElementById('admin-modal').classList.remove('hidden');
             document.getElementById('admin-login-box').classList.remove('hidden');
             document.getElementById('admin-panel-box').classList.add('hidden');
@@ -407,7 +404,7 @@
 
         function sendToTelegramInbox() {
             let videoIdToSent = currentUnlockedVideoId || (videosData.length > 0 ? videosData[0].id : "");
-            let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdToSent}`;
+            let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdIdToSent || videoIdToSent}`;
             
             if (tg && tg.openTelegramLink) {
                 tg.openTelegramLink(targetUrl);

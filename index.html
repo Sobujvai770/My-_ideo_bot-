@@ -376,7 +376,7 @@
             document.getElementById('ad-link-btn').href = currentAdUrl;
             document.getElementById('timer-status').innerHTML = "⚠️ ১০ সেকেন্ডের আগে ফিরে এলে ভিডিওটি আনলক হবে না!";
             document.getElementById('timer-status').className = "text-xs text-red-400 font-semibold";
-            document.getElementById('ad-timer-modal').classList.add('hidden');
+            document.getElementById('ad-timer-modal').classList.remove('hidden');
         }
 
         function startAdTimer() {

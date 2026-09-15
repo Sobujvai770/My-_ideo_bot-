@@ -129,7 +129,6 @@ def run_web():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-# সিকিউরিটির জন্য Render Environment Variable থেকে টোকেন নেওয়া হবে (অথবা নিচে বসাতে পারেন)
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8787602161:AAHYC1CU5DAmwAa6Lv64VeZNhoUKdL_YLDY")
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -155,16 +154,17 @@ def send_welcome(message):
             markup.row(types.InlineKeyboardButton("📢 Main Channel", callback_data="main_channel_info"))
             
             try:
+                full_caption = f"{v_data.get('caption', '🔥 প্রিমিয়াম ভিডিও!')}\n\n⏳ ২ ঘণ্টা পর আপনার ইনবক্স থেকে ভিডিওটি অটোমেটিক ডিলিট হয়ে যাবে।"
                 sent_msg = bot.send_video(
                     message.chat.id, 
                     v_data["video_file_id"], 
-                    caption=f"{v_data.get('caption', '🔥 প্রিমিয়াম ভিডিও!')}\n\n⏳ ২ ঘণ্টা পর আপনার ইনবক্স থেকে ভিডিওটি অটোমেটিক ডিলিট হয়ে যাবে।", 
+                    caption=full_caption, 
                     reply_markup=markup
                 )
                 
-                # ইউজারের ইনবক্স থেকে নির্দিষ্ট সময় পর (যেমন ২ ঘণ্টা = ৭২০০ সেকেন্ড) ভিডিও ডিলিট করার থ্রেড
+                # শুধু ইউজারের ইনবক্স থেকে ২ ঘণ্টা (৭২০০ সেকেন্ড) পর ডিলিট হওয়ার থ্রেড
                 def delete_later(chat_id, msg_id):
-                    time.sleep(7200) # ৭২০০ সেকেন্ড = ২ ঘণ্টা
+                    time.sleep(7200)
                     try:
                         bot.delete_message(chat_id, msg_id)
                     except:

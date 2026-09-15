@@ -162,7 +162,7 @@ def send_welcome(message):
                     reply_markup=markup
                 )
                 
-                # শুধুমাত্র ইউজারের ইনবক্স থেকে ২ ঘণ্টা (৭২০০ সেকেন্ড) পর মেসেজটি ডিলিট হবে
+                # শুধু ইউজারের ইনবক্স থেকে ২ ঘণ্টা (৭২০০ সেকেন্ড) পর মেসেজটি ডিলিট হবে
                 def delete_later(chat_id, msg_id):
                     time.sleep(7200)
                     try:
@@ -176,7 +176,7 @@ def send_welcome(message):
                 bot.send_message(message.chat.id, "⚠️ ভিডিও পাঠাতে সমস্যা হয়েছে বা ফাইল আইডি ভুল আছে।")
             return
         else:
-            bot.send_message(message.chat.id, "⚠️ দুঃখিত! এই ভিডিওটির ডেটা সার্ভারে পাওয়া যায়নি বা ডিলিট হয়ে গেছে।")
+            bot.send_message(message.chat.id, "⚠️ দুঃখিত! এই ভিডিওটির ডেটা সার্ভারে পাওয়া যায়নি।")
             return
 
     web_app_url = "https://sobujvai770.github.io/My-_ideo_bot-/" 

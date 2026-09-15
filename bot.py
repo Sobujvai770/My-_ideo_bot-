@@ -162,7 +162,7 @@ def send_welcome(message):
                     reply_markup=markup
                 )
                 
-                # শুধু ইউজারের ইনবক্স থেকে ২ ঘণ্টা (৭২০০ সেকেন্ড) পর ডিলিট হওয়ার থ্রেড
+                # শুধুমাত্র ইউজারের ইনবক্স থেকে ২ ঘণ্টা (৭২০০ সেকেন্ড) পর মেসেজটি ডিলিট হবে
                 def delete_later(chat_id, msg_id):
                     time.sleep(7200)
                     try:

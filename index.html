@@ -224,7 +224,6 @@
                         <div class="flex items-center justify-between mt-3">
                             <div class="flex items-center space-x-2 flex-1 mr-2">
                                 <div class="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center font-bold text-[10px] shrink-0">TB</div>
-                                <!-- ক্যাপশন যাতে সম্পূর্ণ দেখা যায় এবং কেটে না যায় (line-clamp ہঠিয়ে দেওয়া হয়েছে) -->
                                 <p class="text-xs font-medium text-slate-200 leading-relaxed">${video.caption}</p>
                             </div>
                             <div class="bg-red-600 p-1.5 rounded-full text-white text-xs shrink-0">▶</div>
@@ -377,7 +376,7 @@
             document.getElementById('ad-link-btn').href = currentAdUrl;
             document.getElementById('timer-status').innerHTML = "⚠️ ১০ সেকেন্ডের আগে ফিরে এলে ভিডিওটি আনলক হবে না!";
             document.getElementById('timer-status').className = "text-xs text-red-400 font-semibold";
-            document.getElementById('ad-timer-modal').classList.remove('hidden');
+            document.getElementById('ad-timer-modal').classList.add('hidden');
         }
 
         function startAdTimer() {
@@ -404,7 +403,7 @@
 
         function sendToTelegramInbox() {
             let videoIdToSent = currentUnlockedVideoId || (videosData.length > 0 ? videosData[0].id : "");
-            let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdIdToSent || videoIdToSent}`;
+            let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdToSent}`;
             
             if (tg && tg.openTelegramLink) {
                 tg.openTelegramLink(targetUrl);

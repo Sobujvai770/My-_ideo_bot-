@@ -43,6 +43,7 @@
             <span class="text-orange-500 font-bold text-lg">🔥 My Video Bot Hub</span>
         </div>
         <div>
+            <!-- সাধারণ ইউজাররা ক্লিক করলে কিছুই হবে না, শুধু অ্যাডমিন আইডি ম্যাচ করলে খুলবে -->
             <button onclick="checkAdminAccess()" class="bg-slate-700 hover:bg-slate-600 w-8 h-8 rounded-lg text-slate-200 transition flex items-center justify-center text-sm">⚙️</button>
         </div>
     </header>
@@ -163,6 +164,7 @@
 
         const BOT_USERNAME = "my_video8_bot"; 
         const API_BASE = "https://my-ideo-bot.onrender.com";
+        const ADMIN_TELEGRAM_ID = 8518594452; // আপনার টেলিগ্রাম আইডি এখানে সেট করা হলো
 
         let videosData = [];
         let videoViews = JSON.parse(localStorage.getItem('my_bot_real_views')) || {};
@@ -240,7 +242,19 @@
             localStorage.setItem('my_bot_real_views', JSON.stringify(videoViews));
         }
 
+        // শুধুমাত্র টেলিগ্রাম অ্যাডমিন আইডি চেক করে প্যানেল ওপেন করার ফাংশন
         function checkAdminAccess() {
+            let currentUserId = null;
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                currentUserId = tg.initDataUnsafe.user.id;
+            }
+
+            // যদি ইউজার আইডি অ্যাডমিন আইডি না হয়, তবে সাধারণ ইউজারদের জন্য একদম সাইলেন্ট থাকবে (কিছুই শো করবে না)
+            if (currentUserId !== ADMIN_TELEGRAM_ID) {
+                return; 
+            }
+
+            // অ্যাডমিন হলে তবেই লগইন পপআপ বা প্যানেল ওপেন হবে
             document.getElementById('admin-modal').classList.remove('hidden');
             document.getElementById('admin-login-box').classList.remove('hidden');
             document.getElementById('admin-panel-box').classList.add('hidden');
@@ -399,7 +413,7 @@
 
         function sendToTelegramInbox() {
             let videoIdToSent = currentUnlockedVideoId || (videosData.length > 0 ? videosData[0].id : "");
-            let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdToSent}`;
+            let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdIdToSent || videoIdToSent}`;
             
             if (tg && tg.openTelegramLink) {
                 tg.openTelegramLink(targetUrl);

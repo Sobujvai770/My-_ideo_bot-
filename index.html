@@ -69,10 +69,13 @@
             </div>
 
             <div id="admin-panel-box" class="hidden space-y-4">
-                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700">
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-1.5">
                     <h3 class="font-bold text-xs text-yellow-400 mb-2">📊 বটের লাইভ স্ট্যাটিস্টিক্স</h3>
                     <div class="flex justify-between text-xs text-slate-300">
-                        <span>মোট স্টার্ট ইউজার: <strong id="stat-total-users" class="text-emerald-400">লোড হচ্ছে...</strong></span>
+                        <span>মোট স্টার্ট: <strong id="stat-total-users" class="text-emerald-400">0</strong></span>
+                        <span>লাইভ ইউজার: <strong id="stat-live-users" class="text-cyan-400">0</strong></span>
+                    </div>
+                    <div class="text-xs text-slate-300 pt-1 border-t border-slate-800">
                         <span>মোট ভিডিও: <strong id="stat-total-videos" class="text-orange-400">0</strong></span>
                     </div>
                 </div>
@@ -114,7 +117,7 @@
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-4 border border-slate-700 relative shadow-2xl">
             <button onclick="closeModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold text-lg bg-slate-800 w-7 h-7 rounded-full flex items-center justify-center">✕</button>
             <h3 class="font-bold text-sm text-yellow-400 mb-2">🔒 Select Quality / Part</h3>
-            <p class="text-xs text-slate-300 mb-4">1. Select any quality or part below.<br>2. Wait for 10 seconds on the opened link.<br>3. Return to the app to automatically receive the file!</p>
+            <p class="text-xs text-slate-300 mb-4">1. Select any quality or part below.<br>2. Wait for 10 seconds on the opened ad link.<br>3. Do not switch tabs or leave early!</p>
             <div id="modal-content"></div>
         </div>
     </div>
@@ -123,8 +126,8 @@
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-5 border border-slate-700 text-center relative shadow-2xl">
             <h3 class="font-bold text-sm text-yellow-400 mb-2">⏳ Unlock Video</h3>
             <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 my-3 text-left text-xs text-slate-300">
-                <p class="text-orange-400 font-bold mb-1">⏰ ১০ সেকেন্ডের একটি বিজ্ঞাপন দেখতে হবে।</p>
-                <p class="text-[11px] text-slate-400">• নিচে বাটনটি ক্লিক করুন এবং কমপক্ষে ১০ সেকেন্ড সেই পেইজে থাকুন।</p>
+                <p class="text-orange-400 font-bold mb-1">⏰ বাধ্যতামূলক ১০ সেকেন্ড বিজ্ঞাপন দেখতে হবে।</p>
+                <p class="text-[11px] text-slate-400">• বিজ্ঞাপন পেজে যাওয়ার পর ট্যাব পরিবর্তন করলে বা আগে ফিরলে আনলক হবে না!</p>
             </div>
             
             <a href="#" id="ad-link-btn" target="_blank" onclick="startAdTimer()" class="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-xs transition mb-3 shadow-lg">
@@ -132,7 +135,7 @@
             </a>
 
             <div id="timer-status" class="text-xs text-red-400 font-semibold">
-                ⚠️ ১০ সেকেন্ডের আগে ফিরে এলে ভিডিওটি আনলক হবে না!
+                ⚠️ ১০ সেকেন্ডের আগে ফিরে এলে বা ট্যাব বদলালে ভিডিও আনলক হবে না!
             </div>
         </div>
     </div>
@@ -143,7 +146,7 @@
             
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4 font-bold">✓</div>
             <h3 class="font-bold text-lg text-slate-800 mb-2">আনলক সম্পন্ন হয়েছে!</h3>
-            <p class="text-xs text-slate-600 mb-6 leading-relaxed">নিচের বাটনটি ক্লিক করলে ভিডিওটি সরাসরি আপনার টেলিগ্রাম ইনবক্সে চলে যাবে। এটি ২ ঘণ্টা পর ইনবক্স থেকে অটোমেটিক ডিলিট হয়ে যাবে।</p>
+            <p class="text-xs text-slate-600 mb-6 leading-relaxed">নিচের বাটনটি ক্লিক করলে অ্যাপটি মিনিমাইজ হয়ে ভিডিওটি সরাসরি আপনার টেলিগ্রাম ইনবক্সে চলে যাবে।</p>
             <button onclick="sendToTelegramInbox()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-2xl text-sm transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/30">
                 <span>📥 ইনবক্সে পাঠান</span>
             </button>
@@ -164,6 +167,7 @@
         let currentUnlockedVideoId = null;
         let currentAdUrl = "";
         let timerInterval = null;
+        let isAdWatching = false;
 
         async function fetchVideosFromBackend() {
             try {
@@ -182,9 +186,11 @@
                 let response = await fetch(`${API_BASE}/api/bot-stats?t=` + new Date().getTime(), { cache: 'no-store' });
                 let stats = await response.json();
                 document.getElementById('stat-total-users').innerText = (stats.total_users || 0) + " জন";
+                document.getElementById('stat-live-users').innerText = (stats.live_users || 0) + " জন";
                 document.getElementById('stat-total-videos').innerText = (stats.total_videos || 0);
             } catch (err) {
-                document.getElementById('stat-total-users').innerText = "অরক্ষিত";
+                document.getElementById('stat-total-users').innerText = "0";
+                document.getElementById('stat-live-users').innerText = "0";
                 document.getElementById('stat-total-videos').innerText = "0";
             }
         }
@@ -374,13 +380,14 @@
         function openAdTimerModal() {
             document.getElementById('unlock-modal').classList.add('hidden');
             document.getElementById('ad-link-btn').href = currentAdUrl;
-            document.getElementById('timer-status').innerHTML = "⚠️ ১০ সেকেন্ডের আগে ফিরে এলে ভিডিওটি আনলক হবে না!";
+            document.getElementById('timer-status').innerHTML = "⚠️ ১০ সেকেন্ডের আগে ফিরে এলে বা ট্যাব বদلاলে ভিডিও আনলক হবে না!";
             document.getElementById('timer-status').className = "text-xs text-red-400 font-semibold";
             document.getElementById('ad-timer-modal').classList.remove('hidden');
         }
 
         function startAdTimer() {
             window.open(currentAdUrl, '_blank');
+            isAdWatching = true;
             let timeLeft = 10;
             const statusBox = document.getElementById('timer-status');
             
@@ -393,11 +400,22 @@
 
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
+                    isAdWatching = false;
                     document.getElementById('ad-timer-modal').classList.add('hidden');
                     document.getElementById('success-modal').classList.remove('hidden');
                 }
             }, 1000);
         }
+
+        // কঠোর ম্যান্ডেটরি অ্যাড চেক: ইউজার যদি বিজ্ঞাপন চলাকালীন ট্যাব সুইচ বা মিনিমাইজ করে, টাইমার বাতিল হবে
+        document.addEventListener("visibilitychange", function() {
+            if (document.hidden && isAdWatching) {
+                clearInterval(timerInterval);
+                isAdWatching = false;
+                document.getElementById('ad-timer-modal').classList.add('hidden');
+                alert("⚠️ আপনি বিজ্ঞাপন পেজ থেকে সরে গেছেন বা ট্যাব পরিবর্তন করেছেন! তাই ভিডিও আনলক হয়নি। দয়া করে আবার চেষ্টা করুন।");
+            }
+        });
 
         function closeSuccessModal() { document.getElementById('success-modal').classList.add('hidden'); }
 
@@ -407,7 +425,7 @@
             
             if (tg && tg.openTelegramLink) {
                 tg.openTelegramLink(targetUrl);
-                tg.close();
+                // tg.close() বাদ দেওয়া হলো যাতে অ্যাপটি টোটাল ক্যান্সেল না হয়ে নিচে মিনিমাইজ অবস্থায় থাকে
             } else {
                 window.location.href = targetUrl;
             }

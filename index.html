@@ -117,7 +117,7 @@
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-4 border border-slate-700 relative shadow-2xl">
             <button onclick="closeModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold text-lg bg-slate-800 w-7 h-7 rounded-full flex items-center justify-center">✕</button>
             <h3 class="font-bold text-sm text-yellow-400 mb-2">🔒 Select Quality / Part</h3>
-            <p class="text-xs text-slate-300 mb-4">1. Select any quality or part below.<br>2. Wait for 10 seconds on the opened ad link.<br>3. Do not switch tabs or leave early!</p>
+            <p class="text-xs text-slate-300 mb-4">1. Select any quality or part below.<br>2. Wait for 10 seconds on the opened ad link.<br>3. Then come back and get your video!</p>
             <div id="modal-content"></div>
         </div>
     </div>
@@ -126,16 +126,16 @@
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-5 border border-slate-700 text-center relative shadow-2xl">
             <h3 class="font-bold text-sm text-yellow-400 mb-2">⏳ Unlock Video</h3>
             <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 my-3 text-left text-xs text-slate-300">
-                <p class="text-orange-400 font-bold mb-1">⏰ বাধ্যতামূলক ১০ সেকেন্ড বিজ্ঞাপন দেখতে হবে।</p>
-                <p class="text-[11px] text-slate-400">• বিজ্ঞাপন পেজে যাওয়ার পর ট্যাব পরিবর্তন করলে বা আগে ফিরলে আনলক হবে না!</p>
+                <p class="text-orange-400 font-bold mb-1">⏰ বাধ্যতামূলক ১০ সেকেন্ড বিজ্ঞাপন দেখুন।</p>
+                <p class="text-[11px] text-slate-400">• নিচের বাটন থেকে অ্যাড ওপেন করুন এবং ১০ সেকেন্ড অপেক্ষা করুন।</p>
             </div>
             
             <a href="#" id="ad-link-btn" target="_blank" onclick="startAdTimer()" class="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-xs transition mb-3 shadow-lg">
                 📢 বিজ্ঞাপন দেখুন
             </a>
 
-            <div id="timer-status" class="text-xs text-red-400 font-semibold">
-                ⚠️ ১০ সেকেন্ডের আগে ফিরে এলে বা ট্যাব বদলালে ভিডিও আনলক হবে না!
+            <div id="timer-status" class="text-xs text-yellow-400 font-semibold">
+                ⚠️ ১০ সেকেন্ডের বিজ্ঞাপন পেজে অপেক্ষা করুন!
             </div>
         </div>
     </div>
@@ -146,7 +146,7 @@
             
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4 font-bold">✓</div>
             <h3 class="font-bold text-lg text-slate-800 mb-2">আনলক সম্পন্ন হয়েছে!</h3>
-            <p class="text-xs text-slate-600 mb-6 leading-relaxed">নিচের বাটনটি ক্লিক করলে অ্যাপটি মিনিমাইজ হয়ে ভিডিওটি সরাসরি আপনার টেলিগ্রাম ইনবক্সে চলে যাবে।</p>
+            <p class="text-xs text-slate-600 mb-6 leading-relaxed">নিচের বাটনটি ক্লিক করলে ভিডিওটি সরাসরি আপনার টেলিগ্রাম ইনবক্সে চলে যাবে। এটি ২ ঘণ্টা পর ইনবক্স থেকে অটোমেটিক ডিলিট হয়ে যাবে।</p>
             <button onclick="sendToTelegramInbox()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-2xl text-sm transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/30">
                 <span>📥 ইনবক্সে পাঠান</span>
             </button>
@@ -167,7 +167,6 @@
         let currentUnlockedVideoId = null;
         let currentAdUrl = "";
         let timerInterval = null;
-        let isAdWatching = false;
 
         async function fetchVideosFromBackend() {
             try {
@@ -380,14 +379,13 @@
         function openAdTimerModal() {
             document.getElementById('unlock-modal').classList.add('hidden');
             document.getElementById('ad-link-btn').href = currentAdUrl;
-            document.getElementById('timer-status').innerHTML = "⚠️ ১০ সেকেন্ডের আগে ফিরে এলে বা ট্যাব বদলালে ভিডিও আনলক হবে না!";
-            document.getElementById('timer-status').className = "text-xs text-red-400 font-semibold";
+            document.getElementById('timer-status').innerHTML = "⚠️ ১০ সেকেন্ডের বিজ্ঞাপন পেজে অপেক্ষা করুন!";
+            document.getElementById('timer-status').className = "text-xs text-yellow-400 font-semibold";
             document.getElementById('ad-timer-modal').classList.remove('hidden');
         }
 
         function startAdTimer() {
             window.open(currentAdUrl, '_blank');
-            isAdWatching = true;
             let timeLeft = 10;
             const statusBox = document.getElementById('timer-status');
             
@@ -395,35 +393,16 @@
 
             timerInterval = setInterval(() => {
                 timeLeft--;
-                if (isAdWatching) {
-                    statusBox.innerHTML = `⏳ অপেক্ষা করুন: ${timeLeft} সেকেন্ড`;
-                    statusBox.className = "text-xs text-yellow-400 font-semibold";
-                }
+                statusBox.innerHTML = `⏳ অপেক্ষা করুন: ${timeLeft} সেকেন্ড`;
+                statusBox.className = "text-xs text-yellow-400 font-semibold";
 
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    isAdWatching = false;
                     document.getElementById('ad-timer-modal').classList.add('hidden');
                     document.getElementById('success-modal').classList.remove('hidden');
                 }
             }, 1000);
         }
-
-        // নিরাপদ ভিজিবিলিটি চেকার লজিক (ফলস পজিটিভ এড়ানোর জন্য)
-        document.addEventListener("visibilitychange", function() {
-            if (document.hidden && isAdWatching) {
-                // ইউজার তাৎক্ষণিকভাবে মিনিমাইজ করলে বা অন্য ট্যাবে চলে গেলে ১০ সেকেন্ডের কম সময়ে ক্লোজ হবে
-                setTimeout(() => {
-                    if (document.hidden && isAdWatching) {
-                        clearInterval(timerInterval);
-                        isAdWatching = false;
-                        document.getElementById('ad-timer-modal').classList.add('hidden');
-                        document.getElementById('timer-status').innerHTML = "⚠️ আপনি বিজ্ঞাপন পেজ থেকে সরে গেছেন! তাই ভিডিও আনলক হয়নি।";
-                        document.getElementById('timer-status').className = "text-xs text-red-400 font-semibold";
-                    }
-                }, 1500);
-            }
-        });
 
         function closeSuccessModal() { document.getElementById('success-modal').classList.add('hidden'); }
 

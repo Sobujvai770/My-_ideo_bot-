@@ -5,10 +5,11 @@ import telebot
 from telebot import types
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
-# MongoDB কানেকশন সেটআপ (Render-এর Environment Variable থেকে নিবে)
+# MongoDB কানেকশন সেটআপ
 MONGO_URI = os.environ.get("MONGO_URI", "your_mongodb_connection_string_here")
 client = MongoClient(MONGO_URI)
 db = client["my_video_bot_db"]
@@ -24,20 +25,25 @@ def bot_stats():
     try:
         total_users = users_collection.count_documents({})
         total_videos = videos_collection.count_documents({})
+        
+        # লাইভ বা অ্যাক্টিভ ইউজার হিসাব করা (গত ১০ মিনিটের মধ্যে যারা বট ব্যবহার করেছে)
+        ten_minutes_ago = datetime.utcnow() - timedelta(minutes=10)
+        live_users = users_collection.count_documents({"last_active": {"$gte": ten_minutes_ago}})
+
         res = jsonify({
             "total_users": total_users,
+            "live_users": live_users,
             "total_videos": total_videos
         })
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 200
     except Exception as e:
-        return jsonify({"total_users": 0, "total_videos": 0}), 200
+        return jsonify({"total_users": 0, "live_users": 0, "total_videos": 0}), 200
 
 @app.route('/api/get-videos', methods=['GET'])
 def get_videos():
     try:
         all_videos = list(videos_collection.find({}, {"_id": 0}))
-        # ডাটাবেজ থেকে রিভার্স করে পাঠানো যাতে নতুন ভিডিও উপরে থাকে
         videos_dict = {v["id"]: v for v in reversed(all_videos)}
         res = jsonify(videos_dict)
         res.headers.add("Access-Control-Allow-Origin", "*")
@@ -79,7 +85,6 @@ def save_video():
             "parts": parts
         }
 
-        # MongoDB-তে আপসর্ট (না থাকলে ইনসার্ট হবে, থাকলে আপডেট হবে)
         videos_collection.update_one({"id": video_id}, {"$set": video_doc}, upsert=True)
 
         res = jsonify({"status": "success", "message": "Video saved to MongoDB successfully!"})
@@ -124,9 +129,12 @@ bot = telebot.TeleBot(BOT_TOKEN)
 def send_welcome(message):
     user_id = message.from_user.id
     
-    # MongoDB-তে ইউজার সেভ করা
-    if not users_collection.find_one({"user_id": user_id}):
-        users_collection.insert_one({"user_id": user_id})
+    # MongoDB-তে ইউজার সেভ এবং লাইভ অ্যাক্টিভিটি টাইম আপডেট করা
+    users_collection.update_one(
+        {"user_id": user_id},
+        {"$set": {"last_active": datetime.utcnow()}},
+        upsert=True
+    )
 
     command_args = message.text.split()
     
@@ -148,7 +156,6 @@ def send_welcome(message):
                     reply_markup=markup
                 )
                 
-                # শুধু ইউজারের ইনবক্স থেকে ২ ঘণ্টা (৭২০০ সেকেন্ড) পর মেসেজটি ডিলিট হবে (ওয়েব অ্যাপের হাবের ডাটা অপরিবর্তিত থাকবে)
                 def delete_later(chat_id, msg_id):
                     time.sleep(7200)
                     try:

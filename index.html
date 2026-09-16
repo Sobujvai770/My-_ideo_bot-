@@ -450,11 +450,10 @@
             document.getElementById('unlock-modal').classList.add('hidden');
             document.getElementById('ad-timer-modal').classList.add('hidden');
 
-            // টেলিগ্রামের বিল্ট-ইন মেথড ব্যবহার করে মিনি অ্যাপটি মিনিমাইজড বারে রেখে ইনবক্সে নিয়ে যাবে
-            if (tg && typeof tg.openTelegramLink === 'function') {
-                tg.openTelegramLink(targetUrl);
-            } else {
-                window.open(targetUrl, '_blank');
+            // ইনবক্সে ভিডিও পাঠানোর জন্য লিংক ওপেন হবে এবং টেলিগ্রামের নিয়ম অনুযায়ী মিনি অ্যাপটি নিচে মিনিমাইজড বারে চলে যাবে
+            window.open(targetUrl, '_blank');
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.close();
             }
         }
 

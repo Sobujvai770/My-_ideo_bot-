@@ -408,7 +408,7 @@
             }, 1000);
         }
 
-        // ইউজার অ্যাড পেজে যাওয়ার পর ১০ সেকেন্ড পূর্ণ হওয়ার আগে মিনি অ্যাপে ফিরে আসলে চেক করা
+        // ইউজার অ্যাড পেজে যাওয়ার পর ১০ সেকেন্ড পূর্ণ হওয়ার আগে মিনি অ্যাপে ফিরে আসলে চেক করা (অক্ষত ব্যাকগ্রাউন্ড সহ)
         document.addEventListener("visibilitychange", function() {
             if (!document.hidden && isWaitingForAd) {
                 let elapsedTime = (Date.now() - adStartTime) / 1000;
@@ -416,9 +416,11 @@
                     // ১০ সেকেন্ড পূর্ণ হওয়ার আগেই ফিরে এসেছে
                     if (timerInterval) clearInterval(timerInterval);
                     isWaitingForAd = false;
+                    
+                    // শুধু অ্যাড কাউন্টডাউন মোডালটি বন্ধ হবে, ব্যাকগ্রাউন্ডের অ্যাড বাটন/নোটিশ অক্ষত থাকবে
                     document.getElementById('ad-timer-modal').classList.add('hidden');
                     
-                    // আপনার চাওয়া সুনির্দিষ্ট মেসেজ পপআপ
+                    // ব্রাউজারের স্ট্যান্ডার্ড অ্যালার্ট (ওকে প্রেস করলে শুধু পপআপ যাবে, পেজ রিফ্রেশ হবে না এবং ইউজার চাইলে আবার অ্যাড বাটনে ক্লিক করতে পারবে)
                     alert("আপনি ১০ সেকেন্ড অপেক্ষা করেন নি আবার চেষ্টা করুন।");
                 } else {
                     // ১০ সেকেন্ড বা তার বেশি সময় পার করে সফলভাবে ফিরে এসেছে
@@ -442,8 +444,13 @@
             let videoIdToSent = currentUnlockedVideoId || (videosData.length > 0 ? videosData[0].id : "");
             let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdToSent}`;
             
+            // সফলভাবে ইনবক্সে পাঠানোর জন্য সম্পূর্ণ পপআপ ও সাকসেস মডাল হাইড করে দেওয়া হলো
+            document.getElementById('success-modal').classList.add('hidden');
+            document.getElementById('unlock-modal').classList.add('hidden');
+            document.getElementById('ad-timer-modal').classList.add('hidden');
+
             if (tg && tg.openTelegramLink) {
-                // মিনি অ্যাপটি ক্লোজ বা ধ্বংস না করে ব্যাকগ্রাউন্ডে মিনিমাইজড বা পপ-আপ বারে রাখার জন্য tg.close() বাদ দিয়ে শুধু লিংক ওপেন করা হলো
+                // মিনি অ্যাপটি সম্পূর্ণ ক্লোজ না করে টেলিগ্রামের নিজস্ব নিয়মে স্মুথলি মিনিমাইজ হয়ে ইনবক্সে রিডাইরেক্ট করবে
                 tg.openTelegramLink(targetUrl);
             } else {
                 window.location.href = targetUrl;

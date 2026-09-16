@@ -380,7 +380,7 @@
         function openAdTimerModal() {
             document.getElementById('unlock-modal').classList.add('hidden');
             document.getElementById('ad-link-btn').href = currentAdUrl;
-            document.getElementById('timer-status').innerHTML = "⚠️ ১০ সেকেন্ডের আগে ফিরে এলে বা ট্যাব বদلاলে ভিডিও আনলক হবে না!";
+            document.getElementById('timer-status').innerHTML = "⚠️ ১০ সেকেন্ডের আগে ফিরে এলে বা ট্যাব বদলালে ভিডিও আনলক হবে না!";
             document.getElementById('timer-status').className = "text-xs text-red-400 font-semibold";
             document.getElementById('ad-timer-modal').classList.remove('hidden');
         }
@@ -395,8 +395,10 @@
 
             timerInterval = setInterval(() => {
                 timeLeft--;
-                statusBox.innerHTML = `⏳ অপেক্ষা করুন: ${timeLeft} সেকেন্ড`;
-                statusBox.className = "text-xs text-yellow-400 font-semibold";
+                if (isAdWatching) {
+                    statusBox.innerHTML = `⏳ অপেক্ষা করুন: ${timeLeft} সেকেন্ড`;
+                    statusBox.className = "text-xs text-yellow-400 font-semibold";
+                }
 
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
@@ -407,13 +409,19 @@
             }, 1000);
         }
 
-        // কঠোর ম্যান্ডেটরি অ্যাড চেক: ইউজার যদি বিজ্ঞাপন চলাকালীন ট্যাব সুইচ বা মিনিমাইজ করে, টাইমার বাতিল হবে
+        // নিরাপদ ভিজিবিলিটি চেকার লজিক (ফলস পজিটিভ এড়ানোর জন্য)
         document.addEventListener("visibilitychange", function() {
             if (document.hidden && isAdWatching) {
-                clearInterval(timerInterval);
-                isAdWatching = false;
-                document.getElementById('ad-timer-modal').classList.add('hidden');
-                alert("⚠️ আপনি বিজ্ঞাপন পেজ থেকে সরে গেছেন বা ট্যাব পরিবর্তন করেছেন! তাই ভিডিও আনলক হয়নি। দয়া করে আবার চেষ্টা করুন।");
+                // ইউজার তাৎক্ষণিকভাবে মিনিমাইজ করলে বা অন্য ট্যাবে চলে গেলে ১০ সেকেন্ডের কম সময়ে ক্লোজ হবে
+                setTimeout(() => {
+                    if (document.hidden && isAdWatching) {
+                        clearInterval(timerInterval);
+                        isAdWatching = false;
+                        document.getElementById('ad-timer-modal').classList.add('hidden');
+                        document.getElementById('timer-status').innerHTML = "⚠️ আপনি বিজ্ঞাপন পেজ থেকে সরে গেছেন! তাই ভিডিও আনলক হয়নি।";
+                        document.getElementById('timer-status').className = "text-xs text-red-400 font-semibold";
+                    }
+                }, 1500);
             }
         });
 
@@ -425,7 +433,6 @@
             
             if (tg && tg.openTelegramLink) {
                 tg.openTelegramLink(targetUrl);
-                // tg.close() বাদ দেওয়া হলো যাতে অ্যাপটি টোটাল ক্যান্সেল না হয়ে নিচে মিনিমাইজ অবস্থায় থাকে
             } else {
                 window.location.href = targetUrl;
             }

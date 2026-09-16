@@ -445,14 +445,15 @@
             let videoIdToSent = currentUnlockedVideoId || (videosData.length > 0 ? videosData[0].id : "");
             let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdToSent}`;
             
-            // সফলভাবে ইনবক্সে পাঠানোর পর সমস্ত মোডাল হাইড করে দেওয়া
+            // সমস্ত মোডাল হাইড করে দেওয়া
             document.getElementById('success-modal').classList.add('hidden');
             document.getElementById('unlock-modal').classList.add('hidden');
             document.getElementById('ad-timer-modal').classList.add('hidden');
 
-            if (tg && tg.openTelegramLink) {
-                // মিনি অ্যাপ ব্যাকগ্রাউন্ডে রেখে টেলিগ্রামের ইনবক্সে রিডাইরেক্ট করবে
-                tg.openTelegramLink(targetUrl);
+            // ভিডিওটি ইনবক্সে পাঠানোর জন্য ট্যাব ওপেন হবে এবং মিনি অ্যাপটি টেলিগ্রামের নিয়মে মিনিমাইজড হয়ে নিচে থাকবে
+            if (tg && typeof tg.close === 'function') {
+                window.open(targetUrl, '_blank');
+                tg.close();
             } else {
                 window.location.href = targetUrl;
             }

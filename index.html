@@ -450,12 +450,11 @@
             document.getElementById('unlock-modal').classList.add('hidden');
             document.getElementById('ad-timer-modal').classList.add('hidden');
 
-            // ভিডিওটি ইনবক্সে পাঠানোর জন্য ট্যাব ওপেন হবে এবং মিনি অ্যাপটি টেলিগ্রামের নিয়মে মিনিমাইজড হয়ে নিচে থাকবে
-            if (tg && typeof tg.close === 'function') {
-                window.open(targetUrl, '_blank');
-                tg.close();
+            // টেলিগ্রামের বিল্ট-ইন মেথড ব্যবহার করে মিনি অ্যাপটি মিনিমাইজড বারে রেখে ইনবক্সে নিয়ে যাবে
+            if (tg && typeof tg.openTelegramLink === 'function') {
+                tg.openTelegramLink(targetUrl);
             } else {
-                window.location.href = targetUrl;
+                window.open(targetUrl, '_blank');
             }
         }
 

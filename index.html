@@ -117,17 +117,18 @@
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-4 border border-slate-700 relative shadow-2xl">
             <button onclick="closeModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold text-lg bg-slate-800 w-7 h-7 rounded-full flex items-center justify-center">✕</button>
             <h3 class="font-bold text-sm text-yellow-400 mb-2">🔒 Select Quality / Part</h3>
-            <p class="text-xs text-slate-300 mb-4">1. Select any quality or part below.<br>2. Wait for 10 seconds on the opened ad link.<br>3. Then come back and get your video!</p>
+            <p class="text-xs text-slate-300 mb-4">1. Select any quality or part below.<br>2. Watch 10 seconds ad completely.<br>3. Get your video instantly in inbox!</p>
             <div id="modal-content"></div>
         </div>
     </div>
 
     <div id="ad-timer-modal" class="fixed inset-0 bg-black/85 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-5 border border-slate-700 text-center relative shadow-2xl">
+            <button onclick="closeAdModalEarly()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold text-lg">✕</button>
             <h3 class="font-bold text-sm text-yellow-400 mb-2">⏳ Unlock Video</h3>
             <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 my-3 text-left text-xs text-slate-300">
                 <p class="text-orange-400 font-bold mb-1">⏰ বাধ্যতামূলক ১০ সেকেন্ড বিজ্ঞাপন দেখুন।</p>
-                <p class="text-[11px] text-slate-400">• নিচের বাটন থেকে অ্যাড ওপেন করুন এবং ১০ সেকেন্ড অপেক্ষা করুন।</p>
+                <p class="text-[11px] text-slate-400">• বিজ্ঞাপন পেজে যাওয়ার পর পুরো ১০ সেকেন্ড অপেক্ষা করুন। আগে ফিরলে ভিডিও আনলক হবে না!</p>
             </div>
             
             <a href="#" id="ad-link-btn" target="_blank" onclick="startAdTimer()" class="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-xs transition mb-3 shadow-lg">
@@ -159,7 +160,6 @@
 
         const BOT_USERNAME = "my_video8_bot"; 
         const API_BASE = "https://my-ideo-bot.onrender.com";
-        
         const ADMIN_TELEGRAM_IDS = [8326665891, 8518594452];
 
         let videosData = [];
@@ -167,6 +167,8 @@
         let currentUnlockedVideoId = null;
         let currentAdUrl = "";
         let timerInterval = null;
+        let adStartTime = 0;
+        let isWaitingForAd = false;
 
         async function fetchVideosFromBackend() {
             try {
@@ -386,6 +388,8 @@
 
         function startAdTimer() {
             window.open(currentAdUrl, '_blank');
+            adStartTime = Date.now();
+            isWaitingForAd = true;
             let timeLeft = 10;
             const statusBox = document.getElementById('timer-status');
             
@@ -393,15 +397,43 @@
 
             timerInterval = setInterval(() => {
                 timeLeft--;
-                statusBox.innerHTML = `⏳ অপেক্ষা করুন: ${timeLeft} সেকেন্ড`;
-                statusBox.className = "text-xs text-yellow-400 font-semibold";
-
-                if (timeLeft <= 0) {
+                if (timeLeft > 0) {
+                    statusBox.innerHTML = `⏳ অপেক্ষা করুন: ${timeLeft} সেকেন্ড`;
+                    statusBox.className = "text-xs text-yellow-400 font-semibold";
+                } else {
                     clearInterval(timerInterval);
+                    statusBox.innerHTML = `✅ ১০ সেকেন্ড পূর্ণ হয়েছে! নিচে ফিরে আসুন।`;
+                    statusBox.className = "text-xs text-emerald-400 font-semibold";
+                }
+            }, 1000);
+        }
+
+        // ইউজার অ্যাড পেজে যাওয়ার পর ১০ সেকেন্ড পূর্ণ হওয়ার আগে মিনি অ্যাপে ফিরে আসলে চেক করা
+        document.addEventListener("visibilitychange", function() {
+            if (!document.hidden && isWaitingForAd) {
+                let elapsedTime = (Date.now() - adStartTime) / 1000;
+                if (elapsedTime < 10) {
+                    // ১০ সেকেন্ড পূর্ণ হওয়ার আগেই ফিরে এসেছে
+                    if (timerInterval) clearInterval(timerInterval);
+                    isWaitingForAd = false;
+                    document.getElementById('ad-timer-modal').classList.add('hidden');
+                    
+                    // আপনার চাওয়া সুনির্দিষ্ট মেসেজ পপআপ
+                    alert("আপনি ১০ সেকেন্ড অপেক্ষা করেন নি আবার চেষ্টা করুন।");
+                } else {
+                    // ১০ সেকেন্ড বা তার বেশি সময় পার করে সফলভাবে ফিরে এসেছে
+                    isWaitingForAd = false;
+                    if (timerInterval) clearInterval(timerInterval);
                     document.getElementById('ad-timer-modal').classList.add('hidden');
                     document.getElementById('success-modal').classList.remove('hidden');
                 }
-            }, 1000);
+            }
+        });
+
+        function closeAdModalEarly() {
+            if(timerInterval) clearInterval(timerInterval);
+            isWaitingForAd = false;
+            document.getElementById('ad-timer-modal').classList.add('hidden');
         }
 
         function closeSuccessModal() { document.getElementById('success-modal').classList.add('hidden'); }
@@ -411,6 +443,7 @@
             let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdToSent}`;
             
             if (tg && tg.openTelegramLink) {
+                // মিনি অ্যাপটি ক্লোজ বা ধ্বংস না করে ব্যাকগ্রাউন্ডে মিনিমাইজড বা পপ-আপ বারে রাখার জন্য tg.close() বাদ দিয়ে শুধু লিংক ওপেন করা হলো
                 tg.openTelegramLink(targetUrl);
             } else {
                 window.location.href = targetUrl;

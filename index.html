@@ -69,6 +69,21 @@
             </div>
 
             <div id="admin-panel-box" class="hidden space-y-4">
+                <!-- ব্রডকাস্ট সেকশন (মাত্র দুটি অপশন: ১. ঘোষণা বা টেক্সট, ২. বটের নাম) -->
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
+                    <h3 class="font-bold text-xs text-yellow-400 mb-2">📢 ইউজারের কাছে ব্রডকাস্ট নোটিশ</h3>
+                    <div>
+                        <label class="text-[11px] text-slate-400">১. ঘোষণা বা টেক্সট:</label>
+                        <textarea id="broadcast-msg" rows="2" placeholder="ভাইরাল ভিডিও মিস না করতে চাইলে এখনি দেখে নিন" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1 focus:outline-none focus:border-yellow-400"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-400">২. বটের নাম:</label>
+                        <input type="text" id="broadcast-bot-name" placeholder="my_video8_bot" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1 focus:outline-none focus:border-yellow-400">
+                    </div>
+                    <button onclick="sendBroadcast()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-medium py-2 rounded-lg text-xs transition">সবার কাছে পাঠান 🚀</button>
+                    <p id="broadcast-status" class="text-center text-[11px] mt-1 text-red-400"></p>
+                </div>
+
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-1.5">
                     <h3 class="font-bold text-xs text-yellow-400 mb-2">📊 বটের লাইভ স্ট্যাটিস্টিক্স</h3>
                     <div class="flex justify-between text-xs text-slate-300">
@@ -78,27 +93,6 @@
                     <div class="text-xs text-slate-300 pt-1 border-t border-slate-800">
                         <span>মোট ভিডিও: <strong id="stat-total-videos" class="text-orange-400">0</strong></span>
                     </div>
-                </div>
-
-                <hr class="border-slate-700">
-
-                <!-- ব্রডকাস্ট বা কাস্টম নোটিশ প্যানেল -->
-                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
-                    <h3 class="font-bold text-xs text-cyan-400 mb-1">📢 ইউজারদের কাছে ব্রডকাস্ট নোটিশ</h3>
-                    <div>
-                        <label class="text-[11px] text-slate-400">ঘোষণা বা টেক্সট:</label>
-                        <textarea id="broadcastMsg" rows="3" placeholder="আপনার নোটিশ এখানে লিখুন..." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1"></textarea>
-                    </div>
-                    <div>
-                        <label class="text-[11px] text-slate-400">বাটনের নাম (যেমন: Watch Video):</label>
-                        <input type="text" id="btnText" placeholder="Watch Video" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
-                    </div>
-                    <div>
-                        <label class="text-[11px] text-slate-400">বাটনের লিংক:</label>
-                        <input type="text" id="btnUrl" placeholder="https://t.me/your_bot/app" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
-                    </div>
-                    <button onclick="sendBroadcast()" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-2 rounded-lg text-xs transition shadow-md mt-1">সবার কাছে পাঠান 🚀</button>
-                    <p id="broadcast-status" class="text-[11px] text-center mt-1"></p>
                 </div>
 
                 <hr class="border-slate-700">
@@ -168,7 +162,7 @@
             
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4 font-bold">✓</div>
             <h3 class="font-bold text-lg text-slate-800 mb-2">আনলক সম্পন্ন হয়েছে!</h3>
-            <p class="text-xs text-slate-600 mb-6 leading-relaxed">নিচের বাটনটি ক্লিক করলে ভিডিওটি সরাসরি আপনার টেলিগ্রাম ইনবক্সে চলে যাবে। এটি ২ ঘণ্টা পর ইনবক্স থেকে অটোমেটিক ডিলিট হয়ে যাবে।</p>
+            <p class="text-xs text-slate-600 mb-6 leading-relaxed">নিচের বাটনটি ক্লিক করলে ভিডিওটি সরাসরি আপনার টেলিগ্রাম ইনবক্সে চলে যাবে।</p>
             <button onclick="sendToTelegramInbox()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-2xl text-sm transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/30">
                 <span>📥 ইনবক্সে পাঠান</span>
             </button>
@@ -293,42 +287,38 @@
             }
         }
 
-        // ব্রডকাস্ট মেসেজ সার্ভারে পাঠানোর ফাংশন
         async function sendBroadcast() {
-            let message = document.getElementById('broadcastMsg').value.trim();
-            let buttonText = document.getElementById('btnText').value.trim();
-            let buttonUrl = document.getElementById('btnUrl').value.trim();
-            let statusBox = document.getElementById('broadcast-status');
+            let message = document.getElementById('broadcast-msg').value.trim();
+            let botName = document.getElementById('broadcast-bot-name').value.trim();
+            let statusEl = document.getElementById('broadcast-status');
 
-            if (!message) {
-                alert("দয়া করে নোটিশ বা ঘোষণাটি লিখুন!");
+            if (!message || !botName) {
+                statusEl.innerText = "দয়া করে ঘোষণা এবং বটের নাম উভয়ই লিখুন!";
                 return;
             }
 
-            statusBox.innerText = "পাঠানো হচ্ছে, অপেক্ষা করুন...";
-            statusBox.style.color = "yellow";
+            statusEl.innerText = "পাঠানো হচ্ছে...";
+            statusEl.className = "text-center text-[11px] mt-1 text-yellow-400";
 
             try {
                 let response = await fetch(`${API_BASE}/api/broadcast`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message, buttonText, buttonUrl })
+                    body: JSON.stringify({ message, botName })
                 });
 
-                let result = await response.json();
-                if (result.success) {
-                    statusBox.innerText = result.message;
-                    statusBox.style.color = "lightgreen";
-                    document.getElementById('broadcastMsg').value = '';
-                    document.getElementById('btnText').value = '';
-                    document.getElementById('btnUrl').value = '';
+                if (response.ok) {
+                    statusEl.innerText = "সফলভাবে সবার কাছে পাঠানো হয়েছে! ✅";
+                    statusEl.className = "text-center text-[11px] mt-1 text-emerald-400";
+                    document.getElementById('broadcast-msg').value = '';
+                    document.getElementById('broadcast-bot-name').value = '';
                 } else {
-                    statusBox.innerText = "ত্রুটি: " + (result.error || "পাঠানো যায়নি");
-                    statusBox.style.color = "red";
+                    statusEl.innerText = "সার্ভারে পাঠাতে সমস্যা হয়েছে!";
+                    statusEl.className = "text-center text-[11px] mt-1 text-red-400";
                 }
             } catch (err) {
-                statusBox.innerText = "সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি!";
-                statusBox.style.color = "red";
+                statusEl.innerText = "সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি!";
+                statusEl.className = "text-center text-[11px] mt-1 text-red-400";
             }
         }
 
@@ -476,6 +466,7 @@
                     isWaitingForAd = false;
                     document.getElementById('ad-timer-modal').classList.add('hidden');
                     alert("আপনি ১০ সেকেন্ড অপেক্ষা করেন নি আবার চেষ্টা করুন।");
+                    document.getElementById('unlock-modal').classList.remove('hidden');
                 } else {
                     isWaitingForAd = false;
                     if (timerInterval) clearInterval(timerInterval);
@@ -501,8 +492,9 @@
             document.getElementById('unlock-modal').classList.add('hidden');
             document.getElementById('ad-timer-modal').classList.add('hidden');
 
-            if (tg && tg.openTelegramLink) {
-                tg.openTelegramLink(targetUrl);
+            if (tg && typeof tg.close === 'function') {
+                window.open(targetUrl, '_blank');
+                tg.close();
             } else {
                 window.location.href = targetUrl;
             }

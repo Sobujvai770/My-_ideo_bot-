@@ -125,6 +125,10 @@ def run_web():
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8787602161:AAHYC1CU5DAmwAa6Lv64VeZNhoUKdL_YLDY")
 bot = telebot.TeleBot(BOT_TOKEN)
 
+# আপনার অ্যাডমিন আইডিগুলো এখানে সেট করা আছে
+ADMIN_TELEGRAM_IDS = [8326665891, 8518594452]
+WEB_APP_URL = "https://sobujvai770.github.io/My-_ideo_bot-/"
+
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     user_id = message.from_user.id
@@ -172,9 +176,8 @@ def send_welcome(message):
             bot.send_message(message.chat.id, "⚠️ দুঃখিত! এই ভিডিওটির ডেটা সার্ভারে পাওয়া যায়নি।")
             return
 
-    web_app_url = "https://sobujvai770.github.io/My-_ideo_bot-/" 
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("🎬 Watch Now (Web App)", web_app=types.WebAppInfo(url=web_app_url)))
+    markup.add(types.InlineKeyboardButton("🎬 Watch Now (Web App)", web_app=types.WebAppInfo(url=WEB_APP_URL)))
     
     welcome_text = (
         "🔥 স্বাগতম প্রিমিয়াম এক্সক্লুসিভ জোনে! 🔥\n\n"
@@ -183,6 +186,40 @@ def send_welcome(message):
     )
     
     bot.send_message(message.chat.id, welcome_text, reply_markup=markup)
+
+# নতুন ব্রডকাস্ট কমান্ড: /broadcast <আপনার ঘোষণা>
+@bot.message_handler(commands=['broadcast'])
+def broadcast_message(message):
+    user_id = message.from_user.id
+    if user_id not in ADMIN_TELEGRAM_IDS:
+        bot.reply_to(message, "⚠️ আপনার ব্রডকাস্ট করার অনুমতি নেই!")
+        return
+
+    text_parts = message.text.split(maxsplit=1)
+    if len(text_parts) < 2:
+        bot.reply_to(message, "⚠️ সঠিক নিয়মে দিন। যেমন:\n`/broadcast আপনার ঘোষণা এখানে লিখুন`", parse_mode="Markdown")
+        return
+
+    broadcast_text = text_parts[1]
+    all_users = list(users_collection.find({}, {"user_id": 1}))
+    
+    sent_count = 0
+    failed_count = 0
+
+    # ইনলাইন বাটন (ওপেন ভিডিও / ওয়াচ নাও)
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("🎬 Open Video / Watch Now", web_app=types.WebAppInfo(url=WEB_APP_URL)))
+
+    for u in all_users:
+        uid = u.get("user_id")
+        try:
+            bot.send_message(uid, broadcast_text, reply_markup=markup)
+            sent_count += 1
+            time.sleep(0.05) # ফ্লাড এড়ানোর জন্য সামান্য বিরতি
+        except Exception as e:
+            failed_count += 1
+
+    bot.reply_to(message, f"✅ ব্রডকাস্ট সম্পন্ন হয়েছে!\n\nসফলভাবে গেছে: {sent_count} জন\nব্যর্থ হয়েছে: {failed_count} জন")
 
 @bot.callback_query_handler(func=lambda call: call.data == "main_channel_info")
 def callback_main_channel(call):

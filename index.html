@@ -45,18 +45,6 @@
         </div>
     </header>
 
-    <!-- লাইভ নোটিশ বা টিকার সেকশন -->
-    <div class="bg-[#1e293b] px-3 py-2 border-b border-slate-800 flex items-center space-x-2 sticky top-[57px] z-40 overflow-hidden shadow-md">
-        <span class="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shrink-0 flex items-center space-x-1 animate-pulse">
-            <span>🔴</span> <span>লাইভ</span>
-        </span>
-        <div class="overflow-hidden whitespace-nowrap w-full">
-            <marquee scrollamount="4" class="text-xs text-yellow-400 font-medium">
-                প্রতিদিন নতুন নতুন এক্সক্লুসিভ ও ভাইরাল ভিডিও আপলোড করা হয়। ভাইরাল ভিডিও মিস না করতে চাইলে সবাই আমাদের বটে জয়েন্ট হয়ে পাশে থাকুন!
-            </marquee>
-        </div>
-    </div>
-
     <main class="p-4 max-w-md mx-auto space-y-4">
         <div class="flex items-center justify-between text-yellow-400 font-semibold text-sm">
             <div class="flex items-center space-x-1">
@@ -68,26 +56,8 @@
         <div id="video-container" class="space-y-4">
             <p class="text-center text-xs text-slate-500 py-10">ভিডিও লোড হচ্ছে...</p>
         </div>
-
-        <!-- পেজিনেশন বাটন সেকশন -->
-        <div id="pagination-container" class="flex items-center justify-center space-x-3 pt-4 pb-2 hidden">
-            <button id="prev-btn" onclick="changePage(-1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
-                &lt; Prev
-            </button>
-            <span id="page-indicator" class="text-xs font-bold text-yellow-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
-                Page 1
-            </span>
-            <button id="next-btn" onclick="changePage(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
-                Next &gt;
-            </button>
-        </div>
-
-        <div class="text-center text-[11px] text-slate-500 pt-2">
-            Developed by <span class="text-orange-400 font-semibold">Samim</span>
-        </div>
     </main>
 
-    <!-- অ্যাডমিন মোডাল -->
     <div id="admin-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-5 border border-slate-700 relative shadow-2xl max-h-[90vh] overflow-y-auto">
             <button onclick="closeAdminModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold text-lg">✕</button>
@@ -112,6 +82,27 @@
 
                 <hr class="border-slate-700">
 
+                <!-- ব্রডকাস্ট বা কাস্টম নোটিশ প্যানেল -->
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
+                    <h3 class="font-bold text-xs text-cyan-400 mb-1">📢 ইউজারদের কাছে ব্রডকাস্ট নোটিশ</h3>
+                    <div>
+                        <label class="text-[11px] text-slate-400">ঘোষণা বা টেক্সট:</label>
+                        <textarea id="broadcastMsg" rows="3" placeholder="আপনার নোটিশ এখানে লিখুন..." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-400">বাটনের নাম (যেমন: Watch Video):</label>
+                        <input type="text" id="btnText" placeholder="Watch Video" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-400">বাটনের লিংক:</label>
+                        <input type="text" id="btnUrl" placeholder="https://t.me/your_bot/app" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+                    </div>
+                    <button onclick="sendBroadcast()" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-2 rounded-lg text-xs transition shadow-md mt-1">সবার কাছে পাঠান 🚀</button>
+                    <p id="broadcast-status" class="text-[11px] text-center mt-1"></p>
+                </div>
+
+                <hr class="border-slate-700">
+
                 <h3 class="font-bold text-sm text-emerald-400 mb-2">🛠️ নতুন ভিডিও আপলোড করুন</h3>
                 <div>
                     <label class="text-[11px] text-slate-400">থাম্বনেইল পিকের ডাইরেক্ট লিংক:</label>
@@ -130,8 +121,8 @@
                     <input type="text" id="inp-adurl" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
                 </div>
                 <div>
-                    <label class="text-[11px] text-slate-400">কত পার্ট বা কোয়ালিটি (যেমন: 1 Part):</label>
-                    <input type="text" id="inp-parts" value="1 Part" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+                    <label class="text-[11px] text-slate-400">কত পার্ট বা কোয়ালিটি (যেমন: 2 Parts):</label>
+                    <input type="text" id="inp-parts" value="2 Parts" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
                 </div>
                 <button onclick="addNewVideo()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-xs transition shadow-md mt-2">সংরক্ষণ করুন (Publish)</button>
                 
@@ -143,7 +134,6 @@
         </div>
     </div>
 
-    <!-- আনলক মোডাল -->
     <div id="unlock-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-4 border border-slate-700 relative shadow-2xl">
             <button onclick="closeModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold text-lg bg-slate-800 w-7 h-7 rounded-full flex items-center justify-center">✕</button>
@@ -153,7 +143,6 @@
         </div>
     </div>
 
-    <!-- অ্যাড টাইমার মোডাল -->
     <div id="ad-timer-modal" class="fixed inset-0 bg-black/85 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-5 border border-slate-700 text-center relative shadow-2xl">
             <button onclick="closeAdModalEarly()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold text-lg">✕</button>
@@ -173,7 +162,6 @@
         </div>
     </div>
 
-    <!-- সাকসেস মোডাল -->
     <div id="success-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-white text-slate-900 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl text-center">
             <button onclick="closeSuccessModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-800 font-bold text-lg bg-slate-100 w-7 h-7 rounded-full flex items-center justify-center">✕</button>
@@ -202,10 +190,6 @@
         let timerInterval = null;
         let adStartTime = 0;
         let isWaitingForAd = false;
-
-        // পেজিনেশনের জন্য ভ্যারিয়েবল
-        let currentPage = 1;
-        const videosPerPage = 20;
 
         async function fetchVideosFromBackend() {
             try {
@@ -237,25 +221,14 @@
 
         function renderVideos() {
             const container = document.getElementById('video-container');
-            const paginationContainer = document.getElementById('pagination-container');
             container.innerHTML = '';
 
             if(videosData.length === 0) {
                 container.innerHTML = `<p class="text-center text-xs text-slate-500 py-10">কোনো ভিডিও নেই। অ্যাডমিন প্যানেল থেকে ভিডিও যোগ করুন।</p>`;
-                paginationContainer.classList.add('hidden');
                 return;
             }
 
-            // পেজিনেশন হিসাব
-            const totalPages = Math.ceil(videosData.length / videosPerPage);
-            if (currentPage > totalPages) currentPage = totalPages;
-            if (currentPage < 1) currentPage = 1;
-
-            const startIndex = (currentPage - 1) * videosPerPage;
-            const endIndex = startIndex + videosPerPage;
-            const currentVideos = videosData.slice(startIndex, endIndex);
-
-            currentVideos.forEach(video => {
+            videosData.forEach(video => {
                 if (videoViews[video.id] === undefined) {
                     videoViews[video.id] = Math.floor(Math.random() * 200) + 300;
                 }
@@ -268,7 +241,7 @@
                     <div class="bg-[#1e293b] rounded-2xl p-3">
                         <div class="relative cursor-pointer rounded-xl overflow-hidden bg-slate-800 h-48" onclick="openModal('${video.id}')">
                             <div class="absolute top-2 right-2 bg-black/70 text-yellow-400 px-2 py-0.5 rounded text-[10px] font-bold z-10">
-                                ${video.parts || '1 Part'}
+                                ${video.parts || '2 Parts'}
                             </div>
                             <img src="${video.thumb_link || video.thumbnail}" class="w-full h-full object-cover">
                             <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded-md text-[11px] flex items-center space-x-1 text-slate-200">
@@ -287,24 +260,7 @@
                 `;
                 container.appendChild(card);
             });
-
             localStorage.setItem('my_bot_real_views', JSON.stringify(videoViews));
-
-            // পেজিনেশন কন্ট্রোল আপডেট
-            if (totalPages > 1) {
-                paginationContainer.classList.remove('hidden');
-                document.getElementById('page-indicator').innerText = `Page ${currentPage}`;
-                document.getElementById('prev-btn').disabled = currentPage === 1;
-                document.getElementById('next-btn').disabled = currentPage === totalPages;
-            } else {
-                paginationContainer.classList.add('hidden');
-            }
-        }
-
-        function changePage(direction) {
-            currentPage += direction;
-            renderVideos();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function checkAdminAccess() {
@@ -337,6 +293,45 @@
             }
         }
 
+        // ব্রডকাস্ট মেসেজ সার্ভারে পাঠানোর ফাংশন
+        async function sendBroadcast() {
+            let message = document.getElementById('broadcastMsg').value.trim();
+            let buttonText = document.getElementById('btnText').value.trim();
+            let buttonUrl = document.getElementById('btnUrl').value.trim();
+            let statusBox = document.getElementById('broadcast-status');
+
+            if (!message) {
+                alert("দয়া করে নোটিশ বা ঘোষণাটি লিখুন!");
+                return;
+            }
+
+            statusBox.innerText = "পাঠানো হচ্ছে, অপেক্ষা করুন...";
+            statusBox.style.color = "yellow";
+
+            try {
+                let response = await fetch(`${API_BASE}/api/broadcast`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, buttonText, buttonUrl })
+                });
+
+                let result = await response.json();
+                if (result.success) {
+                    statusBox.innerText = result.message;
+                    statusBox.style.color = "lightgreen";
+                    document.getElementById('broadcastMsg').value = '';
+                    document.getElementById('btnText').value = '';
+                    document.getElementById('btnUrl').value = '';
+                } else {
+                    statusBox.innerText = "ত্রুটি: " + (result.error || "পাঠানো যায়নি");
+                    statusBox.style.color = "red";
+                }
+            } catch (err) {
+                statusBox.innerText = "সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি!";
+                statusBox.style.color = "red";
+            }
+        }
+
         async function addNewVideo() {
             let thumb = document.getElementById('inp-thumb').value.trim();
             let caption = document.getElementById('inp-caption').value.trim();
@@ -352,7 +347,7 @@
 
             let newVideo = {
                 id: videoId,
-                parts: parts || "1 Part",
+                parts: parts || "2 Parts",
                 thumbnail: thumb,
                 caption: caption || "নিউ ভাইরাল ভিডিও 💋",
                 file_id: fileId,
@@ -481,7 +476,6 @@
                     isWaitingForAd = false;
                     document.getElementById('ad-timer-modal').classList.add('hidden');
                     alert("আপনি ১০ সেকেন্ড অপেক্ষা করেন নি আবার চেষ্টা করুন।");
-                    document.getElementById('unlock-modal').classList.remove('hidden');
                 } else {
                     isWaitingForAd = false;
                     if (timerInterval) clearInterval(timerInterval);
@@ -493,7 +487,7 @@
 
         function closeAdModalEarly() {
             if(timerInterval) clearInterval(timerInterval);
-            isWaitingForId = false;
+            isWaitingForAd = false;
             document.getElementById('ad-timer-modal').classList.add('hidden');
         }
 
@@ -507,9 +501,10 @@
             document.getElementById('unlock-modal').classList.add('hidden');
             document.getElementById('ad-timer-modal').classList.add('hidden');
 
-            window.open(targetUrl, '_blank');
-            if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.close();
+            if (tg && tg.openTelegramLink) {
+                tg.openTelegramLink(targetUrl);
+            } else {
+                window.location.href = targetUrl;
             }
         }
 

@@ -122,7 +122,7 @@ def delete_video(video_id):
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 500
 
-# মিনি অ্যাপ থেকে ব্রডকাস্ট রিকোয়েস্ট হ্যান্ডেল করার নতুন রাউট
+# মিনি অ্যাপ থেকে ব্রডকাস্ট রিকোয়েস্ট হ্যান্ডেল করার আপডেট রাউট (ডাবল মেসেজ ফিক্সড)
 @app.route('/api/broadcast', methods=['POST', 'OPTIONS'])
 def broadcast_api():
     if request.method == 'OPTIONS':
@@ -141,14 +141,14 @@ def broadcast_api():
             res.headers.add("Access-Control-Allow-Origin", "*")
             return res, 400
 
-        all_users = list(users_collection.find({}, {"user_id": 1}))
+        # ইউনিক ইউজার আইডি ফিল্টার করা যাতে ডাবল মেসেজ না যায়
+        unique_user_ids = users_collection.distinct("user_id")
         sent_count = 0
 
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("🎬 Open Video / Watch Now", web_app=types.WebAppInfo(url=WEB_APP_URL)))
 
-        for u in all_users:
-            uid = u.get("user_id")
+        for uid in unique_user_ids:
             try:
                 bot.send_message(uid, broadcast_text, reply_markup=markup)
                 sent_count += 1
@@ -171,7 +171,6 @@ def run_web():
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8787602161:AAHYC1CU5DAmwAa6Lv64VeZNhoUKdL_YLDY")
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# আপনার অ্যাডমিন আইডিগুলো এখানে সেট করা আছে
 ADMIN_TELEGRAM_IDS = [8326665891, 8518594452]
 WEB_APP_URL = "https://sobujvai770.github.io/My-_ideo_bot-/"
 
@@ -179,7 +178,6 @@ WEB_APP_URL = "https://sobujvai770.github.io/My-_ideo_bot-/"
 def send_welcome(message):
     user_id = message.from_user.id
     
-    # MongoDB-তে ইউজার সেভ এবং লাইভ অ্যাক্টিভিটি টাইম আপডেট করা
     users_collection.update_one(
         {"user_id": user_id},
         {"$set": {"last_active": datetime.utcnow()}},
@@ -233,7 +231,6 @@ def send_welcome(message):
     
     bot.send_message(message.chat.id, welcome_text, reply_markup=markup)
 
-# টেলিগ্রাম কমান্ডের মাধ্যমে ব্রডকাস্ট করার সিস্টেম (আগের মতো বহাল রাখা হয়েছে)
 @bot.message_handler(commands=['broadcast'])
 def broadcast_message(message):
     user_id = message.from_user.id
@@ -247,7 +244,7 @@ def broadcast_message(message):
         return
 
     broadcast_text = text_parts[1]
-    all_users = list(users_collection.find({}, {"user_id": 1}))
+    unique_user_ids = users_collection.distinct("user_id")
     
     sent_count = 0
     failed_count = 0
@@ -255,8 +252,7 @@ def broadcast_message(message):
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("🎬 Open Video / Watch Now", web_app=types.WebAppInfo(url=WEB_APP_URL)))
 
-    for u in all_users:
-        uid = u.get("user_id")
+    for uid in unique_user_ids:
         try:
             bot.send_message(uid, broadcast_text, reply_markup=markup)
             sent_count += 1

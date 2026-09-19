@@ -69,7 +69,6 @@
             </div>
 
             <div id="admin-panel-box" class="hidden space-y-4">
-                <!-- ব্রডকাস্ট সেকশন (শুধুমাত্র ঘোষণা টেক্সট এবং পাঠান বাটন) -->
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
                     <h3 class="font-bold text-xs text-yellow-400 mb-2">📢 ইউজারের কাছে ব্রডকাস্ট নোটিশ</h3>
                     <div>
@@ -292,7 +291,7 @@
                 return;
             }
 
-            statusEl.innerText = "পাঠানো হচ্ছে...";
+            statusEl.innerText = "পাঠানো হচ্ছে, অপেক্ষা করুন...";
             statusEl.className = "text-center text-[11px] mt-1 text-yellow-400";
 
             try {
@@ -304,11 +303,12 @@
 
                 let resJson = await response.json();
                 if (response.ok) {
-                    statusEl.innerText = `সফলভাবে সবার কাছে পাঠানো হয়েছে! (সফল: ${resJson.sent || 0}) ✅`;
+                    let sentCount = resJson.sent || 0;
+                    statusEl.innerText = `✅ সফলভাবে ${sentCount} জনের কাছে পাঠানো সম্পন্ন হয়েছে!`;
                     statusEl.className = "text-center text-[11px] mt-1 text-emerald-400";
                     document.getElementById('broadcast-msg').value = '';
                 } else {
-                    statusEl.innerText = "সার্ভারে পাঠাতে সমস্যা হয়েছে: " + (resJson.message || "");
+                    statusEl.innerText = "ত্রুটি: " + (resJson.message || "পাঠানো যায়নি");
                     statusEl.className = "text-center text-[11px] mt-1 text-red-400";
                 }
             } catch (err) {

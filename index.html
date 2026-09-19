@@ -56,6 +56,13 @@
         <div id="video-container" class="space-y-4">
             <p class="text-center text-xs text-slate-500 py-10">ভিডিও লোড হচ্ছে...</p>
         </div>
+
+        <!-- পেজিনেশন নেভিগেশন বার (< Prev | Page X | Next >) -->
+        <div id="pagination-container" class="flex justify-center items-center space-x-3 py-4 hidden">
+            <button id="prev-btn" onclick="changePage(-1)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded-lg border border-slate-700 transition disabled:opacity-40 disabled:cursor-not-allowed">&lt; Prev</button>
+            <span id="page-info" class="text-xs text-yellow-400 font-bold">Page 1</span>
+            <button id="next-btn" onclick="changePage(1)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded-lg border border-slate-700 transition disabled:opacity-40 disabled:cursor-not-allowed">Next &gt;</button>
+        </div>
     </main>
 
     <div id="admin-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
@@ -180,12 +187,22 @@
         let adStartTime = 0;
         let isWaitingForAd = false;
 
-        async function fetchVideosFromBackend() {
+        let currentPage = 1;
+        let totalPages = 1;
+
+        async function fetchVideosFromBackend(page = 1) {
             try {
-                let response = await fetch(`${API_BASE}/api/get-videos?t=` + new Date().getTime(), { cache: 'no-store' });
+                let response = await fetch(`${API_BASE}/api/get-videos?page=${page}&t=` + new Date().getTime(), { cache: 'no-store' });
                 let data = await response.json();
-                videosData = Object.keys(data).map(key => ({ id: key, ...data[key] })).reverse();
+                
+                let rawVideos = data.videos || {};
+                videosData = Object.keys(rawVideos).map(key => ({ id: key, ...rawVideos[key] }));
+                
+                currentPage = data.current_page || 1;
+                totalPages = data.total_pages || 1;
+
                 renderVideos();
+                renderPagination();
                 renderAdminVideoList();
             } catch (err) {
                 document.getElementById('video-container').innerHTML = `<p class="text-center text-xs text-red-400 py-10">সার্ভার থেকে ডেটা লোড করতে সমস্যা হয়েছে!</p>`;
@@ -206,7 +223,7 @@
             }
         }
 
-        fetchVideosFromBackend();
+        fetchVideosFromBackend(currentPage);
 
         function renderVideos() {
             const container = document.getElementById('video-container');
@@ -250,6 +267,27 @@
                 container.appendChild(card);
             });
             localStorage.setItem('my_bot_real_views', JSON.stringify(videoViews));
+        }
+
+        function renderPagination() {
+            const paginationContainer = document.getElementById('pagination-container');
+            if (totalPages <= 1) {
+                paginationContainer.classList.add('hidden');
+                return;
+            }
+            paginationContainer.classList.remove('hidden');
+
+            document.getElementById('page-info').innerText = `Page ${currentPage}`;
+            document.getElementById('prev-btn').disabled = currentPage <= 1;
+            document.getElementById('next-btn').disabled = currentPage >= totalPages;
+        }
+
+        function changePage(direction) {
+            let newPage = currentPage + direction;
+            if (newPage >= 1 && newPage <= totalPages) {
+                fetchVideosFromBackend(newPage);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         }
 
         function checkAdminAccess() {
@@ -353,7 +391,7 @@
                     document.getElementById('inp-caption').value = '';
                     document.getElementById('inp-videourl').value = '';
                     document.getElementById('inp-adurl').value = '';
-                    await fetchVideosFromBackend();
+                    await fetchVideosFromBackend(currentPage);
                     await fetchBotStats();
                 } else {
                     alert("সার্ভারে সেভ করতে সমস্যা হয়েছে।");
@@ -390,7 +428,7 @@
                     let response = await fetch(`${API_BASE}/api/delete-video/${id}`, { method: 'DELETE' });
                     if (response.ok) {
                         alert("ভিডিও সফলভাবে ডিলিট করা হয়েছে!");
-                        await fetchVideosFromBackend();
+                        await fetchVideosFromBackend(currentPage);
                         await fetchBotStats();
                     }
                 } catch (err) {

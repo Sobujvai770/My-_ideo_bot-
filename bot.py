@@ -9,9 +9,8 @@ from pymongo import MongoClient
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-CORS(app)  # মিনি অ্যাপ থেকে ব্রডকাস্ট বা ফেচ রিকোয়েস্ট এলাও করার জন্য
+CORS(app)
 
-# MongoDB কানেকশন সেটআপ
 MONGO_URI = os.environ.get("MONGO_URI", "your_mongodb_connection_string_here")
 client = MongoClient(MONGO_URI)
 db = client["my_video_bot_db"]
@@ -28,7 +27,6 @@ def bot_stats():
         total_users = users_collection.count_documents({})
         total_videos = videos_collection.count_documents({})
         
-        # লাইভ বা অ্যাক্টিভ ইউজার হিসাব করা (গত ১০ মিনিটের মধ্যে যারা বট ব্যবহার করেছে)
         ten_minutes_ago = datetime.utcnow() - timedelta(minutes=10)
         live_users = users_collection.count_documents({"last_active": {"$gte": ten_minutes_ago}})
 
@@ -44,16 +42,36 @@ def bot_stats():
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 200
 
+# পেজিনেশন সহ ভিডিও ফেচ করার আপডেট রুট (প্রতি পেজে ২০টি করে)
 @app.route('/api/get-videos', methods=['GET'])
 def get_videos():
     try:
+        page = int(request.args.get('page', 1))
+        per_page = 20
+        
         all_videos = list(videos_collection.find({}, {"_id": 0}))
-        videos_dict = {v["id"]: v for v in reversed(all_videos)}
-        res = jsonify(videos_dict)
+        all_videos.reverse() # নতুন ভিডিওগুলো আগে দেখানোর জন্য
+        
+        total_videos = len(all_videos)
+        total_pages = (total_videos + per_page - 1) // per_page if total_videos > 0 else 1
+        
+        start = (page - 1) * per_page
+        end = start + per_page
+        current_videos_list = all_videos[start:end]
+        
+        # ফ্রন্টএন্ডের সুবিধার জন্য ডিকশনারি বা অবজেক্ট ফরম্যাটে রূপান্তর
+        videos_dict = {v["id"]: v for v in current_videos_list}
+
+        res = jsonify({
+            "videos": videos_dict,
+            "current_page": page,
+            "total_pages": total_pages,
+            "total_videos": total_videos
+        })
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 200
     except Exception as e:
-        res = jsonify({})
+        res = jsonify({"videos": {}, "current_page": 1, "total_pages": 1, "total_videos": 0})
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 200
 
@@ -122,7 +140,6 @@ def delete_video(video_id):
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 500
 
-# মিনি অ্যাপ থেকে ব্রডকাস্ট রিকোয়েস্ট হ্যান্ডেল করার আপডেট রাউট (ডাবল মেসেজ ফিক্সড)
 @app.route('/api/broadcast', methods=['POST', 'OPTIONS'])
 def broadcast_api():
     if request.method == 'OPTIONS':
@@ -141,7 +158,6 @@ def broadcast_api():
             res.headers.add("Access-Control-Allow-Origin", "*")
             return res, 400
 
-        # ইউনিক ইউজার আইডি ফিল্টার করা যাতে ডাবল মেসেজ না যায়
         unique_user_ids = users_collection.distinct("user_id")
         sent_count = 0
 
@@ -152,7 +168,7 @@ def broadcast_api():
             try:
                 bot.send_message(uid, broadcast_text, reply_markup=markup)
                 sent_count += 1
-                time.sleep(0.05) # ফ্লাড এড়ানোর জন্য ছোট বিরতি
+                time.sleep(0.05)
             except Exception as e:
                 pass
 
@@ -292,3 +308,4 @@ if __name__ == "__main__":
     web_thread.start()
     
     run_bot()
+

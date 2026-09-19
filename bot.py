@@ -4,10 +4,12 @@ import time
 import telebot
 from telebot import types
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
+CORS(app)  # মিনি অ্যাপ থেকে ব্রডকাস্ট বা ফেচ রিকোয়েস্ট এলাও করার জন্য
 
 # MongoDB কানেকশন সেটআপ
 MONGO_URI = os.environ.get("MONGO_URI", "your_mongodb_connection_string_here")
@@ -38,7 +40,9 @@ def bot_stats():
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 200
     except Exception as e:
-        return jsonify({"total_users": 0, "live_users": 0, "total_videos": 0}), 200
+        res = jsonify({"total_users": 0, "live_users": 0, "total_videos": 0})
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 200
 
 @app.route('/api/get-videos', methods=['GET'])
 def get_videos():
@@ -118,6 +122,48 @@ def delete_video(video_id):
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 500
 
+# মিনি অ্যাপ থেকে ব্রডকাস্ট রিকোয়েস্ট হ্যান্ডেল করার নতুন রাউট
+@app.route('/api/broadcast', methods=['POST', 'OPTIONS'])
+def broadcast_api():
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'OK'})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST")
+        return response
+
+    try:
+        req_data = request.json
+        broadcast_text = req_data.get("message")
+
+        if not broadcast_text:
+            res = jsonify({"status": "error", "message": "Message is required!"})
+            res.headers.add("Access-Control-Allow-Origin", "*")
+            return res, 400
+
+        all_users = list(users_collection.find({}, {"user_id": 1}))
+        sent_count = 0
+
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton("🎬 Open Video / Watch Now", web_app=types.WebAppInfo(url=WEB_APP_URL)))
+
+        for u in all_users:
+            uid = u.get("user_id")
+            try:
+                bot.send_message(uid, broadcast_text, reply_markup=markup)
+                sent_count += 1
+                time.sleep(0.05) # ফ্লাড এড়ানোর জন্য ছোট বিরতি
+            except Exception as e:
+                pass
+
+        res = jsonify({"status": "success", "sent": sent_count})
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 200
+    except Exception as e:
+        res = jsonify({"status": "error", "message": str(e)})
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 500
+
 def run_web():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
@@ -187,7 +233,7 @@ def send_welcome(message):
     
     bot.send_message(message.chat.id, welcome_text, reply_markup=markup)
 
-# নতুন ব্রডকাস্ট কমান্ড: /broadcast <আপনার ঘোষণা>
+# টেলিগ্রাম কমান্ডের মাধ্যমে ব্রডকাস্ট করার সিস্টেম (আগের মতো বহাল রাখা হয়েছে)
 @bot.message_handler(commands=['broadcast'])
 def broadcast_message(message):
     user_id = message.from_user.id
@@ -206,7 +252,6 @@ def broadcast_message(message):
     sent_count = 0
     failed_count = 0
 
-    # ইনলাইন বাটন (ওপেন ভিডিও / ওয়াচ নাও)
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("🎬 Open Video / Watch Now", web_app=types.WebAppInfo(url=WEB_APP_URL)))
 
@@ -215,7 +260,7 @@ def broadcast_message(message):
         try:
             bot.send_message(uid, broadcast_text, reply_markup=markup)
             sent_count += 1
-            time.sleep(0.05) # ফ্লাড এড়ানোর জন্য সামান্য বিরতি
+            time.sleep(0.05)
         except Exception as e:
             failed_count += 1
 

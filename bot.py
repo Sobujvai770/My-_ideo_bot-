@@ -204,7 +204,10 @@ def send_welcome(message):
     
     if len(command_args) > 1:
         vid_key = str(command_args[1]).strip()
+        # ডাটাবেজ থেকে ভিডিও খুঁজে বের করা (দুটি ফিল্ড ফরম্যাট চেক করা হচ্ছে যেন মিস না হয়)
         v_data = videos_collection.find_one({"id": vid_key})
+        if not v_data:
+            v_data = videos_collection.find_one({"video_file_id": vid_key})
         
         if v_data:
             markup = types.InlineKeyboardMarkup()
@@ -213,9 +216,11 @@ def send_welcome(message):
             
             try:
                 full_caption = f"{v_data.get('caption', '🔥 প্রিমিয়াম ভিডিও!')}\n\n⏳ ২ ঘণ্টা পর আপনার ইনবক্স থেকে ভিডিওটি অটোমেটিক ডিলিট হয়ে যাবে।"
+                file_to_send = v_data.get("video_file_id") or v_data.get("file_id")
+                
                 sent_msg = bot.send_video(
                     message.chat.id, 
-                    v_data["video_file_id"], 
+                    file_to_send, 
                     caption=full_caption, 
                     reply_markup=markup
                 )
@@ -230,7 +235,7 @@ def send_welcome(message):
                 threading.Thread(target=delete_later, args=(message.chat.id, sent_msg.message_id)).start()
 
             except Exception as e:
-                bot.send_message(message.chat.id, "⚠️ ভিডিও পাঠাতে সমস্যা হয়েছে বা ফাইল আইডি ভুল আছে।")
+                bot.send_message(message.chat.id, f"⚠️ ভিডিও পাঠাতে সমস্যা হয়েছে: {str(e)}")
             return
         else:
             bot.send_message(message.chat.id, "⚠️ দুঃখিত! এই ভিডিওটির ডেটা সার্ভারে পাওয়া যায়নি।")
@@ -308,4 +313,3 @@ if __name__ == "__main__":
     web_thread.start()
     
     run_bot()
-

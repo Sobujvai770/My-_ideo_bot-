@@ -173,7 +173,9 @@
 
     <script>
         let tg = window.Telegram.WebApp;
-        tg.expand();
+        try {
+            tg.expand();
+        } catch (e) {}
 
         const BOT_USERNAME = "my_video8_bot"; 
         const API_BASE = "https://my-ideo-bot.onrender.com";
@@ -205,7 +207,10 @@
                 renderPagination();
                 renderAdminVideoList();
             } catch (err) {
+                console.error("Fetch error:", err);
                 document.getElementById('video-container').innerHTML = `<p class="text-center text-xs text-red-400 py-10">সার্ভার থেকে ডেটা লোড করতে সমস্যা হয়েছে!</p>`;
+            } finally {
+                hideSplashScreen();
             }
         }
 
@@ -223,7 +228,21 @@
             }
         }
 
+        // ডেটা ফেচ করা শুরু করা
         fetchVideosFromBackend(currentPage);
+
+        // সেফটি টাইমার: সর্বোচ্চ ৩ সেকেন্ডের মধ্যে স্প্ল্যাশ স্ক্রিন রিমুভ হবেই
+        setTimeout(() => {
+            hideSplashScreen();
+        }, 3000);
+
+        function hideSplashScreen() {
+            const splash = document.getElementById('splash-screen');
+            if (splash && splash.style.display !== 'none') {
+                splash.style.opacity = '0';
+                setTimeout(() => splash.style.display = 'none', 500);
+            }
+        }
 
         function renderVideos() {
             const container = document.getElementById('video-container');
@@ -296,7 +315,8 @@
                 currentUserId = tg.initDataUnsafe.user.id;
             }
 
-            if (!ADMIN_TELEGRAM_IDS.includes(currentUserId)) {
+            if (ADMIN_TELEGRAM_IDS.length > 0 && currentUserId && !ADMIN_TELEGRAM_IDS.includes(currentUserId)) {
+                alert("আপনার অ্যাডমিন এক্সেস নেই!");
                 return; 
             }
 
@@ -519,7 +539,7 @@
 
         function sendToTelegramInbox() {
             let videoIdToSent = currentUnlockedVideoId || (videosData.length > 0 ? videosData[0].id : "");
-            let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdToSent}`;
+            let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdIdToSent || ''}`;
             
             document.getElementById('success-modal').classList.add('hidden');
             document.getElementById('unlock-modal').classList.add('hidden');
@@ -532,14 +552,6 @@
                 window.location.href = targetUrl;
             }
         }
-
-        window.addEventListener('load', function() {
-            setTimeout(() => {
-                const splash = document.getElementById('splash-screen');
-                splash.style.opacity = '0';
-                setTimeout(() => splash.style.display = 'none', 500);
-            }, 600);
-        });
     </script>
 </body>
 </html>

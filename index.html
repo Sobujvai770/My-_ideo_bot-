@@ -228,10 +228,8 @@
             }
         }
 
-        // ডেটা ফেচ করা শুরু করা
         fetchVideosFromBackend(currentPage);
 
-        // সেফটি টাইমার: সর্বোচ্চ ৩ সেকেন্ডের মধ্যে স্প্ল্যাশ স্ক্রিন রিমুভ হবেই
         setTimeout(() => {
             hideSplashScreen();
         }, 3000);
@@ -539,13 +537,16 @@
 
         function sendToTelegramInbox() {
             let videoIdToSent = currentUnlockedVideoId || (videosData.length > 0 ? videosData[0].id : "");
-            let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdIdToSent || ''}`;
+            let targetUrl = `https://t.me/${BOT_USERNAME}?start=${videoIdToSent}`;
             
             document.getElementById('success-modal').classList.add('hidden');
             document.getElementById('unlock-modal').classList.add('hidden');
             document.getElementById('ad-timer-modal').classList.add('hidden');
 
-            if (tg && typeof tg.close === 'function') {
+            if (tg && typeof tg.openTelegramLink === 'function') {
+                tg.openTelegramLink(targetUrl);
+                tg.close();
+            } else if (tg && typeof tg.close === 'function') {
                 window.open(targetUrl, '_blank');
                 tg.close();
             } else {

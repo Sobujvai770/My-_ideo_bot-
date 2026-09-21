@@ -21,6 +21,11 @@ users_collection = db["users"]
 def home():
     return "Bot and MongoDB API are running and alive!"
 
+# এক্সোক্লিক ভেরিফিকেশন রুট (এখানে আপনার কোডটি বসিয়ে দেওয়া হয়েছে)
+@app.route('/0bcec08e25fcfa79d99733b143c9f091.html')
+def verify_exoclick():
+    return "0bcec08e25fcfa79d99733b143c9f091"
+
 @app.route('/api/bot-stats', methods=['GET'])
 def bot_stats():
     try:
@@ -204,7 +209,6 @@ def send_welcome(message):
     
     if len(command_args) > 1:
         vid_key = str(command_args[1]).strip()
-        # ডাটাবেজ থেকে ভিডিও খুঁজে বের করা (দুটি ফিল্ড ফরম্যাট চেক করা হচ্ছে যেন মিস না হয়)
         v_data = videos_collection.find_one({"id": vid_key})
         if not v_data:
             v_data = videos_collection.find_one({"video_file_id": vid_key})

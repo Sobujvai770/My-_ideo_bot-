@@ -1,15 +1,16 @@
-import os
+Import os
 import threading
 import time
 import telebot
 from telebot import types
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
+CORS(app)
 
-# MongoDB কানেকশন সেটআপ
 MONGO_URI = os.environ.get("MONGO_URI", "your_mongodb_connection_string_here")
 client = MongoClient(MONGO_URI)
 db = client["my_video_bot_db"]
@@ -26,7 +27,6 @@ def bot_stats():
         total_users = users_collection.count_documents({})
         total_videos = videos_collection.count_documents({})
         
-        # লাইভ বা অ্যাক্টিভ ইউজার হিসাব করা (গত ১০ মিনিটের মধ্যে যারা বট ব্যবহার করেছে)
         ten_minutes_ago = datetime.utcnow() - timedelta(minutes=10)
         live_users = users_collection.count_documents({"last_active": {"$gte": ten_minutes_ago}})
 
@@ -38,18 +38,40 @@ def bot_stats():
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 200
     except Exception as e:
-        return jsonify({"total_users": 0, "live_users": 0, "total_videos": 0}), 200
+        res = jsonify({"total_users": 0, "live_users": 0, "total_videos": 0})
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 200
 
+# পেজিনেশন সহ ভিডিও ফেচ করার আপডেট রুট (প্রতি পেজে ২০টি করে)
 @app.route('/api/get-videos', methods=['GET'])
 def get_videos():
     try:
+        page = int(request.args.get('page', 1))
+        per_page = 20
+        
         all_videos = list(videos_collection.find({}, {"_id": 0}))
-        videos_dict = {v["id"]: v for v in reversed(all_videos)}
-        res = jsonify(videos_dict)
+        all_videos.reverse() # নতুন ভিডিওগুলো আগে দেখানোর জন্য
+        
+        total_videos = len(all_videos)
+        total_pages = (total_videos + per_page - 1) // per_page if total_videos > 0 else 1
+        
+        start = (page - 1) * per_page
+        end = start + per_page
+        current_videos_list = all_videos[start:end]
+        
+        # ফ্রন্টএন্ডের সুবিধার জন্য ডিকশনারি বা অবজেক্ট ফরম্যাটে রূপান্তর
+        videos_dict = {v["id"]: v for v in current_videos_list}
+
+        res = jsonify({
+            "videos": videos_dict,
+            "current_page": page,
+            "total_pages": total_pages,
+            "total_videos": total_videos
+        })
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 200
     except Exception as e:
-        res = jsonify({})
+        res = jsonify({"videos": {}, "current_page": 1, "total_pages": 1, "total_videos": 0})
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 200
 
@@ -118,6 +140,46 @@ def delete_video(video_id):
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 500
 
+@app.route('/api/broadcast', methods=['POST', 'OPTIONS'])
+def broadcast_api():
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'OK'})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST")
+        return response
+
+    try:
+        req_data = request.json
+        broadcast_text = req_data.get("message")
+
+        if not broadcast_text:
+            res = jsonify({"status": "error", "message": "Message is required!"})
+            res.headers.add("Access-Control-Allow-Origin", "*")
+            return res, 400
+
+        unique_user_ids = users_collection.distinct("user_id")
+        sent_count = 0
+
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton("🎬 Open Video / Watch Now", web_app=types.WebAppInfo(url=WEB_APP_URL)))
+
+        for uid in unique_user_ids:
+            try:
+                bot.send_message(uid, broadcast_text, reply_markup=markup)
+                sent_count += 1
+                time.sleep(0.05)
+            except Exception as e:
+                pass
+
+        res = jsonify({"status": "success", "sent": sent_count})
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 200
+    except Exception as e:
+        res = jsonify({"status": "error", "message": str(e)})
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 500
+
 def run_web():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
@@ -125,11 +187,13 @@ def run_web():
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8787602161:AAHYC1CU5DAmwAa6Lv64VeZNhoUKdL_YLDY")
 bot = telebot.TeleBot(BOT_TOKEN)
 
+ADMIN_TELEGRAM_IDS = [8326665891, 8518594452]
+WEB_APP_URL = "https://sobujvai770.github.io/My-_ideo_bot-/"
+
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     user_id = message.from_user.id
     
-    # MongoDB-তে ইউজার সেভ এবং লাইভ অ্যাক্টিভিটি টাইম আপডেট করা
     users_collection.update_one(
         {"user_id": user_id},
         {"$set": {"last_active": datetime.utcnow()}},
@@ -140,7 +204,10 @@ def send_welcome(message):
     
     if len(command_args) > 1:
         vid_key = str(command_args[1]).strip()
+        # ডাটাবেজ থেকে ভিডিও খুঁজে বের করা (দুটি ফিল্ড ফরম্যাট চেক করা হচ্ছে যেন মিস না হয়)
         v_data = videos_collection.find_one({"id": vid_key})
+        if not v_data:
+            v_data = videos_collection.find_one({"video_file_id": vid_key})
         
         if v_data:
             markup = types.InlineKeyboardMarkup()
@@ -149,9 +216,11 @@ def send_welcome(message):
             
             try:
                 full_caption = f"{v_data.get('caption', '🔥 প্রিমিয়াম ভিডিও!')}\n\n⏳ ২ ঘণ্টা পর আপনার ইনবক্স থেকে ভিডিওটি অটোমেটিক ডিলিট হয়ে যাবে।"
+                file_to_send = v_data.get("video_file_id") or v_data.get("file_id")
+                
                 sent_msg = bot.send_video(
                     message.chat.id, 
-                    v_data["video_file_id"], 
+                    file_to_send, 
                     caption=full_caption, 
                     reply_markup=markup
                 )
@@ -166,15 +235,14 @@ def send_welcome(message):
                 threading.Thread(target=delete_later, args=(message.chat.id, sent_msg.message_id)).start()
 
             except Exception as e:
-                bot.send_message(message.chat.id, "⚠️ ভিডিও পাঠাতে সমস্যা হয়েছে বা ফাইল আইডি ভুল আছে।")
+                bot.send_message(message.chat.id, f"⚠️ ভিডিও পাঠাতে সমস্যা হয়েছে: {str(e)}")
             return
         else:
             bot.send_message(message.chat.id, "⚠️ দুঃখিত! এই ভিডিওটির ডেটা সার্ভারে পাওয়া যায়নি।")
             return
 
-    web_app_url = "https://sobujvai770.github.io/My-_ideo_bot-/" 
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("🎬 Watch Now (Web App)", web_app=types.WebAppInfo(url=web_app_url)))
+    markup.add(types.InlineKeyboardButton("🎬 Watch Now (Web App)", web_app=types.WebAppInfo(url=WEB_APP_URL)))
     
     welcome_text = (
         "🔥 স্বাগতম প্রিমিয়াম এক্সক্লুসিভ জোনে! 🔥\n\n"
@@ -183,6 +251,37 @@ def send_welcome(message):
     )
     
     bot.send_message(message.chat.id, welcome_text, reply_markup=markup)
+
+@bot.message_handler(commands=['broadcast'])
+def broadcast_message(message):
+    user_id = message.from_user.id
+    if user_id not in ADMIN_TELEGRAM_IDS:
+        bot.reply_to(message, "⚠️ আপনার ব্রডকাস্ট করার অনুমতি নেই!")
+        return
+
+    text_parts = message.text.split(maxsplit=1)
+    if len(text_parts) < 2:
+        bot.reply_to(message, "⚠️ সঠিক নিয়মে দিন। যেমন:\n`/broadcast আপনার ঘোষণা এখানে লিখুন`", parse_mode="Markdown")
+        return
+
+    broadcast_text = text_parts[1]
+    unique_user_ids = users_collection.distinct("user_id")
+    
+    sent_count = 0
+    failed_count = 0
+
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("🎬 Open Video / Watch Now", web_app=types.WebAppInfo(url=WEB_APP_URL)))
+
+    for uid in unique_user_ids:
+        try:
+            bot.send_message(uid, broadcast_text, reply_markup=markup)
+            sent_count += 1
+            time.sleep(0.05)
+        except Exception as e:
+            failed_count += 1
+
+    bot.reply_to(message, f"✅ ব্রডকাস্ট সম্পন্ন হয়েছে!\n\nসফলভাবে গেছে: {sent_count} জন\nব্যর্থ হয়েছে: {failed_count} জন")
 
 @bot.callback_query_handler(func=lambda call: call.data == "main_channel_info")
 def callback_main_channel(call):
@@ -213,4 +312,4 @@ if __name__ == "__main__":
     web_thread = threading.Thread(target=run_web)
     web_thread.start()
     
-    run_bot()
+    run_bot() 

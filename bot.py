@@ -42,7 +42,7 @@ def bot_stats():
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 200
 
-# পেজিনেশন সহ ভিডিও ফেচ করার আপডেট রুট (প্রতি পেজে ২০টি করে)
+# পেজিনেশন সহ ভিডিও ফেচ করার রুট (প্রতি পেজে ২০টি করে)
 @app.route('/api/get-videos', methods=['GET'])
 def get_videos():
     try:
@@ -59,7 +59,6 @@ def get_videos():
         end = start + per_page
         current_videos_list = all_videos[start:end]
         
-        # ফ্রন্টএন্ডের সুবিধার জন্য ডিকশনারি বা অবজেক্ট ফরম্যাটে রূপান্তর
         videos_dict = {v["id"]: v for v in current_videos_list}
 
         res = jsonify({
@@ -204,7 +203,6 @@ def send_welcome(message):
     
     if len(command_args) > 1:
         vid_key = str(command_args[1]).strip()
-        # ডাটাবেজ থেকে ভিডিও খুঁজে বের করা (দুটি ফিল্ড ফরম্যাট চেক করা হচ্ছে যেন মিস না হয়)
         v_data = videos_collection.find_one({"id": vid_key})
         if not v_data:
             v_data = videos_collection.find_one({"video_file_id": vid_key})
@@ -287,15 +285,20 @@ def broadcast_message(message):
 def callback_main_channel(call):
     bot.answer_callback_query(call.id, "📢 এটি আমাদের অফিসিয়াল চ্যানেল!", show_alert=True)
 
+# আপডেট করা ফাইল আইডি কালেক্টর (সরাসরি চ্যাটে সেন্ড করলে বা ফরোয়ার্ড করলে আইডি ধরে নিবে)
 @bot.message_handler(content_types=['video', 'document'])
 def get_video_id(message):
     try:
+        vid_file_id = None
         if message.video:
             vid_file_id = message.video.file_id
-            bot.reply_to(message, f"✅ এই ভিডিওর File ID হলো:\n\n`{vid_file_id}`", parse_mode="Markdown")
         elif message.document and 'video' in message.document.mime_type:
-            doc_file_id = message.document.file_id
-            bot.reply_to(message, f"✅ এই ভিডিও (Document) ফাইল আইডি হলো:\n\n`{doc_file_id}`", parse_mode="Markdown")
+            vid_file_id = message.document.file_id
+        
+        if vid_file_id:
+            bot.reply_to(message, f"✅ এই ভিডিওর File ID হলো:\n\n`{vid_file_id}`", parse_mode="Markdown")
+        else:
+            bot.reply_to(message, "⚠️ এই ভিডিও থেকে ফাইল আইডি সংগ্রহ করা যায়নি। দয়া করে ভিডিওটি ফরোয়ার্ড না করে সরাসরি এই চ্যাটে সেন্ড করুন!")
     except Exception as e:
         bot.reply_to(message, f"⚠️ ফাইল আইডি পেতে সমস্যা হয়েছে: {str(e)}")
 

@@ -42,15 +42,15 @@ def bot_stats():
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 200
 
-# পেজিনেশন সহ ভিডিও ফেচ করার রুট (প্রতি পেজে ২০টি করে)
+# [সমাধান ২] নতুন ভিডিওগুলো যেন সবসময় সবার উপরে থাকে (সর্টিং ঠিক করা হয়েছে)
 @app.route('/api/get-videos', methods=['GET'])
 def get_videos():
     try:
         page = int(request.args.get('page', 1))
         per_page = 20
         
-        all_videos = list(videos_collection.find({}, {"_id": 0}))
-        all_videos.reverse() # নতুন ভিডিওগুলো আগে দেখানোর জন্য
+        # ডাটাবেজ থেকে লেটেস্ট ভিডিওগুলো প্রথমে আনার জন্য _id দিয়ে রিভার্স সর্ট করা হয়েছে
+        all_videos = list(videos_collection.find({}, {"_id": 0}).sort("_id", -1))
         
         total_videos = len(all_videos)
         total_pages = (total_videos + per_page - 1) // per_page if total_videos > 0 else 1
@@ -103,7 +103,8 @@ def save_video():
             "caption": caption,
             "ad_link": ad_link,
             "thumb_link": thumb_link,
-            "parts": parts
+            "parts": parts,
+            "created_at": datetime.utcnow()
         }
 
         videos_collection.update_one({"id": video_id}, {"$set": video_doc}, upsert=True)
@@ -213,7 +214,8 @@ def send_welcome(message):
             markup.row(types.InlineKeyboardButton("📢 Main Channel", callback_data="main_channel_info"))
             
             try:
-                full_caption = f"{v_data.get('caption', '🔥 প্রিমিয়াম ভিডিও!')}\n\n⏳ ২ ঘণ্টা পর আপনার ইনবক্স থেকে ভিডিওটি অটোমেটিক ডিলিট হয়ে যাবে।"
+                # [সমাধান ১] ক্যাপশনে ১৫ মিনিট লিখে দেওয়া হয়েছে
+                full_caption = f"{v_data.get('caption', '🔥 প্রিমিয়াম ভিডিও!')}\n\n⏳ ১৫ মিনিট পর আপনার ইনবক্স থেকে ভিডিওটি অটোমেটিক ডিলিট হয়ে যাবে।"
                 file_to_send = v_data.get("video_file_id") or v_data.get("file_id")
                 
                 sent_msg = bot.send_video(
@@ -223,12 +225,13 @@ def send_welcome(message):
                     reply_markup=markup
                 )
                 
+                # [সমাধান ১] ১৫ মিনিট পর অটো-ডিলিট হওয়ার জন্য ৯০০ সেকেন্ড (১৫ * ৬০) সেট করা হলো
                 def delete_later(chat_id, msg_id):
-                    time.sleep(7200)
+                    time.sleep(900)
                     try:
                         bot.delete_message(chat_id, msg_id)
-                    except:
-                        pass
+                    except Exception as err:
+                        print(f"Auto-delete error: {err}")
                 
                 threading.Thread(target=delete_later, args=(message.chat.id, sent_msg.message_id)).start()
 
@@ -285,7 +288,6 @@ def broadcast_message(message):
 def callback_main_channel(call):
     bot.answer_callback_query(call.id, "📢 এটি আমাদের অফিসিয়াল চ্যানেল!", show_alert=True)
 
-# আপডেট করা ফাইল আইডি কালেক্টর (সরাসরি চ্যাটে সেন্ড করলে বা ফরোয়ার্ড করলে আইডি ধরে নিবে)
 @bot.message_handler(content_types=['video', 'document'])
 def get_video_id(message):
     try:

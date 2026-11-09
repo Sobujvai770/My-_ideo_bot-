@@ -42,14 +42,14 @@ def bot_stats():
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 200
 
-# [সমাধান ২] নতুন ভিডিওগুলো যেন সবসময় সবার উপরে থাকে (সর্টিং ঠিক করা হয়েছে)
+# নতুন ভিডিওগুলো সবসময় সবার উপরে রাখার জন্য লিস্ট আকারে রিটার্ন করা হলো
 @app.route('/api/get-videos', methods=['GET'])
 def get_videos():
     try:
         page = int(request.args.get('page', 1))
         per_page = 20
         
-        # ডাটাবেজ থেকে লেটেস্ট ভিডিওগুলো প্রথমে আনার জন্য _id দিয়ে রিভার্স সর্ট করা হয়েছে
+        # MongoDB থেকে লেটেস্ট ভিডিওগুলো _id ডিসেন্ডিং অর্ডারে (-1) ফেচ করা হচ্ছে
         all_videos = list(videos_collection.find({}, {"_id": 0}).sort("_id", -1))
         
         total_videos = len(all_videos)
@@ -58,11 +58,9 @@ def get_videos():
         start = (page - 1) * per_page
         end = start + per_page
         current_videos_list = all_videos[start:end]
-        
-        videos_dict = {v["id"]: v for v in current_videos_list}
 
         res = jsonify({
-            "videos": videos_dict,
+            "videos": current_videos_list, # ডিকশনারির পরিবর্তে সরাসরি লিস্ট দেওয়া হলো যাতে সিরিয়াল ঠিক থাকে
             "current_page": page,
             "total_pages": total_pages,
             "total_videos": total_videos
@@ -70,7 +68,7 @@ def get_videos():
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 200
     except Exception as e:
-        res = jsonify({"videos": {}, "current_page": 1, "total_pages": 1, "total_videos": 0})
+        res = jsonify({"videos": [], "current_page": 1, "total_pages": 1, "total_videos": 0})
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 200
 
@@ -214,7 +212,6 @@ def send_welcome(message):
             markup.row(types.InlineKeyboardButton("📢 Main Channel", callback_data="main_channel_info"))
             
             try:
-                # [সমাধান ১] ক্যাপশনে ১৫ মিনিট লিখে দেওয়া হয়েছে
                 full_caption = f"{v_data.get('caption', '🔥 প্রিমিয়াম ভিডিও!')}\n\n⏳ ১৫ মিনিট পর আপনার ইনবক্স থেকে ভিডিওটি অটোমেটিক ডিলিট হয়ে যাবে।"
                 file_to_send = v_data.get("video_file_id") or v_data.get("file_id")
                 
@@ -225,7 +222,6 @@ def send_welcome(message):
                     reply_markup=markup
                 )
                 
-                # [সমাধান ১] ১৫ মিনিট পর অটো-ডিলিট হওয়ার জন্য ৯০০ সেকেন্ড (১৫ * ৬০) সেট করা হলো
                 def delete_later(chat_id, msg_id):
                     time.sleep(900)
                     try:

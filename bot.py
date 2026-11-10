@@ -212,7 +212,7 @@ def send_welcome(message):
             markup.row(types.InlineKeyboardButton("📢 Main Channel", callback_data="main_channel_info"))
             
             try:
-                full_caption = f"{v_data.get('caption', '🔥 প্রিমিয়াম ভিডিও!')}\n\n⏳ ৩০ মিনিট পর আপনার ইনবক্স থেকে ভিডিওটি অটোমেটিক ডিলিট হয়ে যাবে।"
+                full_caption = f"{v_data.get('caption', '🔥 প্রিমিয়াম ভিডিও!')}\n\n⏳ ১৫ মিনিট পর আপনার ইনবক্স থেকে ভিডিওটি অটোমেটিক ডিলিট হয়ে যাবে।"
                 file_to_send = v_data.get("video_file_id") or v_data.get("file_id")
                 
                 sent_msg = bot.send_video(
@@ -222,14 +222,16 @@ def send_welcome(message):
                     reply_markup=markup
                 )
                 
+                # রেন্ডার হোস্টিংয়ের জন্য নিরাপদ ১৫ মিনিট (৯০*১০ সেকেন্ড) অটো-ডিলিট থ্রেড
                 def delete_later(chat_id, msg_id):
-                    time.sleep(900)
+                    for _ in range(90):
+                        time.sleep(10)
                     try:
                         bot.delete_message(chat_id, msg_id)
                     except Exception as err:
                         print(f"Auto-delete error: {err}")
                 
-                threading.Thread(target=delete_later, args=(message.chat.id, sent_msg.message_id)).start()
+                threading.Thread(target=delete_later, args=(message.chat.id, sent_msg.message_id), daemon=True).start()
 
             except Exception as e:
                 bot.send_message(message.chat.id, f"⚠️ ভিডিও পাঠাতে সমস্যা হয়েছে: {str(e)}")

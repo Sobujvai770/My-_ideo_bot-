@@ -60,7 +60,7 @@ def get_videos():
         current_videos_list = all_videos[start:end]
 
         res = jsonify({
-            "videos": current_videos_list, # ডিকশনারির পরিবর্তে সরাসরি লিস্ট দেওয়া হলো যাতে সিরিয়াল ঠিক থাকে
+            "videos": current_videos_list,
             "current_page": page,
             "total_pages": total_pages,
             "total_videos": total_videos
@@ -138,7 +138,7 @@ def delete_video(video_id):
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 500
 
-# অ্যাডমিন প্যানেল থেকে ছবি (থাম্বনেইল) ও টেক্সটসহ ব্রডকাস্ট করার আপডেট API
+# নিরাপদ ফলব্যাক হ্যান্ডলিং সহ ব্রডকাস্ট এপিআই
 @app.route('/api/broadcast', methods=['POST', 'OPTIONS'])
 def broadcast_api():
     if request.method == 'OPTIONS':
@@ -151,7 +151,7 @@ def broadcast_api():
     try:
         req_data = request.json
         broadcast_text = req_data.get("message")
-        photo_url = req_data.get("photo_url", "").strip() # থাম্বনেইল বা ছবির লিঙ্ক রিসিভ করার জন্য
+        photo_url = req_data.get("photo_url", "").strip()
 
         if not broadcast_text:
             res = jsonify({"status": "error", "message": "Message is required!"})
@@ -167,10 +167,12 @@ def broadcast_api():
         for uid in unique_user_ids:
             try:
                 if photo_url and photo_url.startswith("http"):
-                    # যদি ছবির লিঙ্ক দেওয়া থাকে, তবে ছবি + ক্যাপশন + বাটন যাবে
-                    bot.send_photo(uid, photo=photo_url, caption=broadcast_text, reply_markup=markup)
+                    try:
+                        bot.send_photo(uid, photo=photo_url, caption=broadcast_text, reply_markup=markup)
+                    except Exception as photo_err:
+                        # ছবি পাঠাতে সমস্যা হলে স্বয়ংক্রিয়ভাবে টেক্সট পাঠিয়ে দিবে যাতে ব্রডকাস্ট আটকে না যায়
+                        bot.send_message(uid, broadcast_text, reply_markup=markup)
                 else:
-                    # শুধু টেক্সট হলে সাধারণ মেসেজ যাবে
                     bot.send_message(uid, broadcast_text, reply_markup=markup)
                 
                 sent_count += 1
@@ -230,7 +232,6 @@ def send_welcome(message):
                     reply_markup=markup
                 )
                 
-                # রেন্ডার হোস্টিংয়ের জন্য নিরাপদ ১৫ মিনিট (৯০*১০ সেকেন্ড) অটো-ডিলিট থ্রেড
                 def delete_later(chat_id, msg_id):
                     for _ in range(90):
                         time.sleep(10)

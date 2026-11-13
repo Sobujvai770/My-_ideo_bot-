@@ -319,6 +319,21 @@ def get_file_id(message):
             bot.reply_to(message, "⚠️ ফাইল আইডি সংগ্রহ করা যায়নি। দয়া করে সরাসরি সেন্ড করুন!")
     except Exception as e:
         bot.reply_to(message, f"⚠️ ফাইল আইডি পেতে সমস্যা হয়েছে: {str(e)}")
+@app.route('/api/get-image/<file_id>', methods=['GET'])
+def get_telegram_image(file_id):
+    try:
+        # টেলিগ্রাম থেকে ফাইল ইনফো সংগ্রহ করা
+        file_info = bot.get_file(file_id)
+        # টেলিগ্রাম সার্ভার থেকে ফাইলটির ডিরেক্ট ডাউনলোড লিঙ্ক তৈরি করা
+        file_url = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_info.file_path}"
+        
+        res = jsonify({"status": "success", "url": file_url})
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 200
+    except Exception as e:
+        res = jsonify({"status": "error", "message": str(e)})
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 500
 
 def run_bot():
     print("Bot is running with MongoDB...")

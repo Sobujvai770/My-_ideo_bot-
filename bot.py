@@ -138,7 +138,7 @@ def delete_video(video_id):
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 500
 
-# নিরাপদ ফলব্যাক হ্যান্ডলিং সহ ব্রডকাস্ট এপিআই
+# নিরাপদ ফলব্যাক এবং ফাইল আইডি/লিংক হ্যান্ডলিং সহ ব্রডকাস্ট এপিআই
 @app.route('/api/broadcast', methods=['POST', 'OPTIONS'])
 def broadcast_api():
     if request.method == 'OPTIONS':
@@ -151,7 +151,7 @@ def broadcast_api():
     try:
         req_data = request.json
         broadcast_text = req_data.get("message")
-        photo_url = req_data.get("photo_url", "").strip()
+        photo_input = req_data.get("photo_url", "").strip()
 
         if not broadcast_text:
             res = jsonify({"status": "error", "message": "Message is required!"})
@@ -166,11 +166,12 @@ def broadcast_api():
 
         for uid in unique_user_ids:
             try:
-                if photo_url and photo_url.startswith("http"):
+                if photo_input:
                     try:
-                        bot.send_photo(uid, photo=photo_url, caption=broadcast_text, reply_markup=markup)
+                        # টেলিগ্রাম ফাইল আইডি অথবা ডিরেক্ট ইমেজ লিঙ্ক উভয়ভাবেই পাঠানোর চেষ্টা করবে
+                        bot.send_photo(uid, photo=photo_input, caption=broadcast_text, reply_markup=markup)
                     except Exception as photo_err:
-                        # ছবি পাঠাতে সমস্যা হলে স্বয়ংক্রিয়ভাবে টেক্সট পাঠিয়ে দিবে যাতে ব্রডকাস্ট আটকে না যায়
+                        # ছবি পাঠাতে ফেইল করলে শুধু টেক্সট পাঠাবে যাতে ব্রডকাস্ট আটকে না যায়
                         bot.send_message(uid, broadcast_text, reply_markup=markup)
                 else:
                     bot.send_message(uid, broadcast_text, reply_markup=markup)
@@ -295,19 +296,27 @@ def broadcast_message(message):
 def callback_main_channel(call):
     bot.answer_callback_query(call.id, "📢 এটি আমাদের অফিসিয়াল চ্যানেল!", show_alert=True)
 
-@bot.message_handler(content_types=['video', 'document'])
-def get_video_id(message):
+# ভিডিও, ডকুমেন্ট এবং ছবির File ID সংগ্রহ করার আপডেট হ্যান্ডলার
+@bot.message_handler(content_types=['video', 'document', 'photo'])
+def get_file_id(message):
     try:
-        vid_file_id = None
-        if message.video:
-            vid_file_id = message.video.file_id
-        elif message.document and 'video' in message.document.mime_type:
-            vid_file_id = message.document.file_id
+        file_id = None
+        file_type_name = "ফাইল"
         
-        if vid_file_id:
-            bot.reply_to(message, f"✅ এই ভিডিওর File ID হলো:\n\n`{vid_file_id}`", parse_mode="Markdown")
+        if message.video:
+            file_id = message.video.file_id
+            file_type_name = "ভিডিওর"
+        elif message.document and 'video' in message.document.mime_type:
+            file_id = message.document.file_id
+            file_type_name = "ভিডিওর"
+        elif message.photo:
+            file_id = message.photo[-1].file_id
+            file_type_name = "ছবির (Thumbnail)"
+        
+        if file_id:
+            bot.reply_to(message, f"✅ এই {file_type_name} File ID হলো:\n\n`{file_id}`", parse_mode="Markdown")
         else:
-            bot.reply_to(message, "⚠️ এই ভিডিও থেকে ফাইল আইডি সংগ্রহ করা যায়নি। দয়া করে ভিডিওটি ফরোয়ার্ড না করে সরাসরি এই চ্যাটে সেন্ড করুন!")
+            bot.reply_to(message, "⚠️ ফাইল আইডি সংগ্রহ করা যায়নি। দয়া করে সরাসরি সেন্ড করুন!")
     except Exception as e:
         bot.reply_to(message, f"⚠️ ফাইল আইডি পেতে সমস্যা হয়েছে: {str(e)}")
 

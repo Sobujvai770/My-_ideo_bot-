@@ -79,8 +79,8 @@
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
                     <h3 class="font-bold text-xs text-yellow-400 mb-2">📢 ইউজারের কাছে ব্রডকাস্ট নোটিশ</h3>
                     <div>
-                        <label class="text-[11px] text-slate-400">থাম্বনেইল বা ছবির ডিরেক্ট লিংক (ঐচ্ছিক):</label>
-                        <input type="text" id="broadcast-photo" placeholder="https://..." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1 mb-2 focus:outline-none focus:border-yellow-400">
+                        <label class="text-[11px] text-slate-400">থাম্বনেইল বা ছবির লিঙ্ক / File ID (ঐচ্ছিক):</label>
+                        <input type="text" id="broadcast-photo" placeholder="https:// অথবা File ID" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1 mb-2 focus:outline-none focus:border-yellow-400">
                     </div>
                     <div>
                         <label class="text-[11px] text-slate-400">আপনার ঘোষণা বা টেক্সট লিখুন:</label>
@@ -105,8 +105,8 @@
 
                 <h3 class="font-bold text-sm text-emerald-400 mb-2">🛠️ নতুন ভিডিও আপলোড করুন</h3>
                 <div>
-                    <label class="text-[11px] text-slate-400">থাম্বনেইল পিকের ডাইরেক্ট লিংক:</label>
-                    <input type="text" id="inp-thumb" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+                    <label class="text-[11px] text-slate-400">থাম্বনেইল ছবির লিঙ্ক অথবা Telegram File ID:</label>
+                    <input type="text" id="inp-thumb" placeholder="https:// অথবা File ID" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
                 </div>
                 <div>
                     <label class="text-[11px] text-slate-400">ভিডিওর ক্যাপশন:</label>
@@ -262,6 +262,12 @@
                 let totalViews = videoViews[video.id];
                 let formattedViews = totalViews > 1000 ? (totalViews / 1000).toFixed(1) + 'k' : totalViews;
 
+                let imgSrc = video.thumb_link || video.thumbnail || "";
+                // যদি থাম্বনেইলটি ডিরেক্ট লিঙ্ক না হয়ে টেলিগ্রাম ফাইল আইডি হয়, তবে ডিফল্ট প্লেসহোল্ডার বা টেমপ্লেট দেখাবে
+                if (imgSrc && !imgSrc.startsWith("http")) {
+                    imgSrc = "https://files.catbox.moe/ltjvrt.png"; 
+                }
+
                 const card = document.createElement('div');
                 card.className = "rainbow-border shadow-xl";
                 card.innerHTML = `
@@ -270,7 +276,7 @@
                             <div class="absolute top-2 right-2 bg-black/70 text-yellow-400 px-2 py-0.5 rounded text-[10px] font-bold z-10">
                                 ${video.parts || '2 Parts'}
                             </div>
-                            <img src="${video.thumb_link || video.thumbnail}" class="w-full h-full object-cover">
+                            <img src="${imgSrc}" class="w-full h-full object-cover">
                             <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded-md text-[11px] flex items-center space-x-1 text-slate-200">
                                 <span>👁️</span>
                                 <span>${formattedViews}</span>
@@ -434,11 +440,16 @@
                 return;
             }
             videosData.forEach(video => {
+                let listImg = video.thumb_link || video.thumbnail || "";
+                if (listImg && !listImg.startsWith("http")) {
+                    listImg = "https://files.catbox.moe/ltjvrt.png";
+                }
+
                 const item = document.createElement('div');
                 item.className = "flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800";
                 item.innerHTML = `
                     <div class="flex items-center space-x-2 overflow-hidden mr-2">
-                        <img src="${video.thumb_link || video.thumbnail}" class="w-8 h-8 rounded object-cover shrink-0">
+                        <img src="${listImg}" class="w-8 h-8 rounded object-cover shrink-0">
                         <p class="text-[11px] text-slate-300 truncate">${video.caption}</p>
                     </div>
                     <button onclick="deleteVideo('${video.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-[10px] shrink-0 transition">ডিলিট</button>
@@ -526,6 +537,7 @@
                     alert("আপনি ১০ সেকেন্ড অপেক্ষা করেন নি আবার চেষ্টা করুন।");
                     document.getElementById('unlock-modal').classList.remove('hidden');
                 } else {
+                    isWaitingForAd = Data.now(); // reset
                     isWaitingForAd = false;
                     if (timerInterval) clearInterval(timerInterval);
                     document.getElementById('ad-timer-modal').classList.add('hidden');

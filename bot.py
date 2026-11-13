@@ -138,6 +138,7 @@ def delete_video(video_id):
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 500
 
+# অ্যাডমিন প্যানেল থেকে ছবি (থাম্বনেইল) ও টেক্সটসহ ব্রডকাস্ট করার আপডেট API
 @app.route('/api/broadcast', methods=['POST', 'OPTIONS'])
 def broadcast_api():
     if request.method == 'OPTIONS':
@@ -150,6 +151,7 @@ def broadcast_api():
     try:
         req_data = request.json
         broadcast_text = req_data.get("message")
+        photo_url = req_data.get("photo_url", "").strip() # থাম্বনেইল বা ছবির লিঙ্ক রিসিভ করার জন্য
 
         if not broadcast_text:
             res = jsonify({"status": "error", "message": "Message is required!"})
@@ -164,7 +166,13 @@ def broadcast_api():
 
         for uid in unique_user_ids:
             try:
-                bot.send_message(uid, broadcast_text, reply_markup=markup)
+                if photo_url and photo_url.startswith("http"):
+                    # যদি ছবির লিঙ্ক দেওয়া থাকে, তবে ছবি + ক্যাপশন + বাটন যাবে
+                    bot.send_photo(uid, photo=photo_url, caption=broadcast_text, reply_markup=markup)
+                else:
+                    # শুধু টেক্সট হলে সাধারণ মেসেজ যাবে
+                    bot.send_message(uid, broadcast_text, reply_markup=markup)
+                
                 sent_count += 1
                 time.sleep(0.05)
             except Exception as e:

@@ -79,6 +79,10 @@
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
                     <h3 class="font-bold text-xs text-yellow-400 mb-2">📢 ইউজারের কাছে ব্রডকাস্ট নোটিশ</h3>
                     <div>
+                        <label class="text-[11px] text-slate-400">থাম্বনেইল বা ছবির ডিরেক্ট লিংক (ঐচ্ছিক):</label>
+                        <input type="text" id="broadcast-photo" placeholder="https://..." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1 mb-2 focus:outline-none focus:border-yellow-400">
+                    </div>
+                    <div>
                         <label class="text-[11px] text-slate-400">আপনার ঘোষণা বা টেক্সট লিখুন:</label>
                         <textarea id="broadcast-msg" rows="3" placeholder="নতুন একটি চমৎকার ভিডিও আপলোড করা হয়েছে, দেখতে নিচের বাটনে ক্লিক করুন!" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1 focus:outline-none focus:border-yellow-400"></textarea>
                     </div>
@@ -339,6 +343,7 @@
         }
 
         async function sendBroadcast() {
+            let photoUrl = document.getElementById('broadcast-photo').value.trim();
             let message = document.getElementById('broadcast-msg').value.trim();
             let statusEl = document.getElementById('broadcast-status');
 
@@ -354,7 +359,7 @@
                 let response = await fetch(`${API_BASE}/api/broadcast`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message })
+                    body: JSON.stringify({ message: message, photo_url: photoUrl })
                 });
 
                 let resJson = await response.json();
@@ -363,6 +368,7 @@
                     statusEl.innerText = `✅ সফলভাবে ${sentCount} জনের কাছে পাঠানো সম্পন্ন হয়েছে!`;
                     statusEl.className = "text-center text-[11px] mt-1 text-emerald-400";
                     document.getElementById('broadcast-msg').value = '';
+                    document.getElementById('broadcast-photo').value = '';
                 } else {
                     statusEl.innerText = "ত্রুটি: " + (resJson.message || "পাঠানো যায়নি");
                     statusEl.className = "text-center text-[11px] mt-1 text-red-400";

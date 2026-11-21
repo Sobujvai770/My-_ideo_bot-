@@ -80,6 +80,14 @@
         </div>
     </main>
 
+    <!-- Deep-Link Shared Post Spotlight Modal -->
+    <div id="shared-post-modal" class="fixed inset-0 bg-black/85 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-4 border border-slate-700 relative shadow-2xl">
+            <button onclick="closeSharedPostModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold text-lg bg-slate-800 w-7 h-7 rounded-full flex items-center justify-center z-10">✕</button>
+            <div id="shared-post-content"></div>
+        </div>
+    </div>
+
     <div id="admin-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-[#1e293b] w-full max-w-sm rounded-2xl p-5 border border-slate-700 relative shadow-2xl max-h-[90vh] overflow-y-auto">
             <button onclick="closeAdminModal()" class="absolute top-3 right-3 text-slate-400 hover:text-white font-bold text-lg">✕</button>
@@ -210,6 +218,119 @@
 
         let currentPage = 1;
         let totalPages = 1;
+        let hasOpenedDeepLinkPost = false;
+
+        function getDeepLinkVideoId() {
+            let startParam = "";
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) {
+                startParam = String(tg.initDataUnsafe.start_param).trim();
+            }
+            if (!startParam) {
+                const urlParams = new URLSearchParams(window.location.search);
+                startParam = (urlParams.get("tgWebAppStartParam") || urlParams.get("startapp") || urlParams.get("start") || "").trim();
+            }
+            if (!startParam && window.location.hash) {
+                const hashMatch = window.location.hash.match(/(?:tgWebAppStartParam|startapp|start)=([^&]+)/);
+                if (hashMatch && hashMatch[1]) {
+                    startParam = decodeURIComponent(hashMatch[1]).trim();
+                }
+            }
+            return startParam || null;
+        }
+
+        async function resolveImageSrc(video) {
+            let imgSrc = "https://files.catbox.moe/ltjvrt.png";
+            let thumbInput = video.thumb_link || video.thumbnail || "";
+
+            if (thumbInput.startsWith("http")) {
+                imgSrc = thumbInput;
+            } else if (thumbInput) {
+                try {
+                    let imgRes = await fetch(`${API_BASE}/api/get-image/${thumbInput}`);
+                    let imgData = await imgRes.json();
+                    if (imgData.status === "success" && imgData.url) {
+                        imgSrc = imgData.url;
+                    }
+                } catch (err) {
+                    console.error("Image fetch error:", err);
+                }
+            }
+            return imgSrc;
+        }
+
+        async function openSharedPostById(targetId) {
+            if (!targetId || hasOpenedDeepLinkPost) return;
+            let matchedVideo = videosData.find(v => String(v.id) === String(targetId));
+
+            if (!matchedVideo) {
+                try {
+                    let res = await fetch(`${API_BASE}/api/get-videos?page=1&limit=100&t=` + new Date().getTime(), { cache: 'no-store' });
+                    let data = await res.json();
+                    let rawVideos = data.videos || {};
+                    let allList = Object.keys(rawVideos).map(key => ({ id: key, ...rawVideos[key] }));
+                    matchedVideo = allList.find(v => String(v.id) === String(targetId));
+                } catch (e) {
+                    console.error("Deep link lookup error:", e);
+                }
+            }
+
+            if (matchedVideo) {
+                hasOpenedDeepLinkPost = true;
+                if (videoViews[matchedVideo.id] === undefined) {
+                    videoViews[matchedVideo.id] = Math.floor(Math.random() * 200) + 300;
+                }
+                let totalViews = videoViews[matchedVideo.id];
+                let formattedViews = totalViews > 1000 ? (totalViews / 1000).toFixed(1) + 'k' : totalViews;
+                let imgSrc = await resolveImageSrc(matchedVideo);
+
+                document.getElementById('shared-post-content').innerHTML = `
+                    <div class="pt-1">
+                        <div class="relative rounded-xl overflow-hidden bg-slate-800 h-52 mb-3">
+                            <div class="absolute top-2 left-2 bg-black/75 text-yellow-400 px-2 py-0.5 rounded text-[10px] font-bold">
+                                ${matchedVideo.parts || '2 Parts'}
+                            </div>
+                            <img src="${imgSrc}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://files.catbox.moe/ltjvrt.png';">
+                            <div class="absolute bottom-2 left-2 bg-black/75 px-2 py-0.5 rounded-md text-[11px] flex items-center space-x-1 text-slate-200">
+                                <span>👁️</span>
+                                <span>${formattedViews}</span>
+                            </div>
+                        </div>
+                        <p class="text-xs font-semibold text-slate-100 leading-relaxed mb-4">${matchedVideo.caption || 'ভিডিও পোস্ট'}</p>
+                        <button onclick="closeSharedPostModal(); openModal('${matchedVideo.id}');" class="w-full bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold py-3 rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg">
+                            <span>▶</span>
+                            <span>WATCH / DOWNLOAD NOW</span>
+                        </button>
+                    </div>
+                `;
+                document.getElementById('shared-post-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeSharedPostModal() {
+            document.getElementById('shared-post-modal').classList.add('hidden');
+        }
+
+        function shareVideoPost(videoId, encodedCaption) {
+            const deepLink = `https://t.me/${BOT_USERNAME}?startapp=${videoId}`;
+            const captionText = decodeURIComponent(encodedCaption || "");
+            const shareText = captionText ? `${captionText}\n\n${deepLink}` : deepLink;
+            const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(deepLink)}&text=${encodeURIComponent(captionText || "এই ভিডিও পোস্টটি দেখুন:")}`;
+
+            if (tg && typeof tg.openTelegramLink === 'function') {
+                tg.openTelegramLink(telegramShareUrl);
+                return;
+            }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert("পোস্টের ডিপ-লিংক কপি হয়েছে:\n" + deepLink);
+                }).catch(() => {
+                    prompt("এই লিংকটি কপি করে শেয়ার করুন:", deepLink);
+                });
+            } else {
+                prompt("এই লিংকটি কপি করে শেয়ার করুন:", deepLink);
+            }
+        }
 
         async function fetchVideosFromBackend(page = 1) {
             try {
@@ -225,6 +346,11 @@
                 renderVideos();
                 renderPagination();
                 renderAdminVideoList();
+
+                let deepLinkId = getDeepLinkVideoId();
+                if (deepLinkId && !hasOpenedDeepLinkPost) {
+                    await openSharedPostById(deepLinkId);
+                }
             } catch (err) {
                 console.error("Fetch error:", err);
                 document.getElementById('video-container').innerHTML = `<p class="text-center text-xs text-red-400 py-10">সার্ভার থেকে ডেটা লোড করতে সমস্যা হয়েছে!</p>`;
@@ -276,23 +402,8 @@
                 }
                 let totalViews = videoViews[video.id];
                 let formattedViews = totalViews > 1000 ? (totalViews / 1000).toFixed(1) + 'k' : totalViews;
-
-                let imgSrc = "https://files.catbox.moe/ltjvrt.png";
-                let thumbInput = video.thumb_link || video.thumbnail || "";
-
-                if (thumbInput.startsWith("http")) {
-                    imgSrc = thumbInput;
-                } else if (thumbInput) {
-                    try {
-                        let imgRes = await fetch(`${API_BASE}/api/get-image/${thumbInput}`);
-                        let imgData = await imgRes.json();
-                        if (imgData.status === "success" && imgData.url) {
-                            imgSrc = imgData.url;
-                        }
-                    } catch (err) {
-                        console.error("Image fetch error:", err);
-                    }
-                }
+                let imgSrc = await resolveImageSrc(video);
+                let safeCaption = encodeURIComponent(video.caption || "");
 
                 const card = document.createElement('div');
                 card.className = "rainbow-border shadow-xl";
@@ -309,11 +420,14 @@
                             </div>
                         </div>
                         <div class="flex items-center justify-between mt-3">
-                            <div class="flex items-center space-x-2 flex-1 mr-2">
+                            <div class="flex items-center space-x-2 flex-1 mr-2 cursor-pointer" onclick="openModal('${video.id}')">
                                 <div class="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center font-bold text-[10px] shrink-0">TB</div>
                                 <p class="text-xs font-medium text-slate-200 leading-relaxed">${video.caption}</p>
                             </div>
-                            <div class="bg-red-600 p-1.5 rounded-full text-white text-xs shrink-0">▶</div>
+                            <div class="flex items-center space-x-1.5 shrink-0">
+                                <button type="button" onclick="event.stopPropagation(); shareVideoPost('${video.id}', '${safeCaption}')" title="Share Post" class="bg-slate-800 hover:bg-slate-700 text-cyan-400 w-7 h-7 rounded-full flex items-center justify-center text-xs border border-slate-700 transition">📤</button>
+                                <button type="button" onclick="event.stopPropagation(); openModal('${video.id}')" class="bg-red-600 hover:bg-red-700 w-7 h-7 rounded-full flex items-center justify-center text-white text-xs transition">▶</button>
+                            </div>
                         </div>
                     </div>
                 `;

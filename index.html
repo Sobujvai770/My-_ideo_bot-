@@ -151,8 +151,14 @@
                 
                 <hr class="border-slate-700 my-3">
                 
-                <h3 class="font-bold text-xs text-red-400 mb-2">🗑️ ভিডিও ম্যানেজমেন্ট (ডিলিট করুন)</h3>
-                <div id="admin-video-list" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
+                    <h3 class="font-bold text-xs text-cyan-400">📣 চ্যানেলে পোস্ট সেটিংস</h3>
+                    <input type="text" id="target-channel-id" placeholder="@akervitorsobv অথবা -1001234567890" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-cyan-400">
+                    <p id="channel-post-status" class="text-[11px] text-slate-400"></p>
+                </div>
+
+                <h3 class="font-bold text-xs text-red-400 mb-2">🗑️ ভিডিও ম্যানেজমেন্ট (পোস্ট ও ডিলিট)</h3>
+                <div id="admin-video-list" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
             </div>
         </div>
     </div>
@@ -204,7 +210,7 @@
             tg.expand();
         } catch (e) {}
 
-        const BOT_USERNAME = "my_video8_bot"; 
+        const BOT_USERNAME = "my_video8_bot";
         const API_BASE = "https://my-ideo-bot.onrender.com";
         const ADMIN_TELEGRAM_IDS = [8326665891, 8518594452];
 
@@ -219,6 +225,22 @@
         let currentPage = 1;
         let totalPages = 1;
         let hasOpenedDeepLinkPost = false;
+
+        function getSavedChannelId() {
+            return localStorage.getItem('my_bot_target_channel') || '@akervitorsobv';
+        }
+
+        function saveChannelInputValue() {
+            const inputEl = document.getElementById('target-channel-id');
+            if (inputEl) {
+                const val = inputEl.value.trim();
+                if (val) {
+                    localStorage.setItem('my_bot_target_channel', val);
+                }
+                return val;
+            }
+            return getSavedChannelId();
+        }
 
         function getDeepLinkVideoId() {
             let startParam = "";
@@ -481,10 +503,77 @@
             if(pass === "17906780Ss") {
                 document.getElementById('admin-login-box').classList.add('hidden');
                 document.getElementById('admin-panel-box').classList.remove('hidden');
+                const channelInput = document.getElementById('target-channel-id');
+                if (channelInput) {
+                    channelInput.value = getSavedChannelId();
+                    channelInput.onchange = saveChannelInputValue;
+                }
+                const statusEl = document.getElementById('channel-post-status');
+                if (statusEl) {
+                    statusEl.innerText = '';
+                }
                 fetchBotStats(); 
                 renderAdminVideoList();
             } else {
                 alert("ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন।");
+            }
+        }
+
+        async function postVideoToChannel(videoId, btnElement = null) {
+            const channelId = saveChannelInputValue();
+            const statusEl = document.getElementById('channel-post-status');
+
+            if (!channelId) {
+                alert("দয়া করে চ্যানেলের @username অথবা ID দিন!");
+                return;
+            }
+
+            const originalText = btnElement ? btnElement.innerText : "Post to Channel";
+            if (btnElement) {
+                btnElement.disabled = true;
+                btnElement.innerText = "Posting...";
+            }
+            if (statusEl) {
+                statusEl.innerText = `${channelId} চ্যানেলে পোস্ট পাঠানো হচ্ছে...`;
+                statusEl.className = "text-[11px] text-yellow-400";
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/post-to-channel`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        video_id: String(videoId),
+                        channel_id: channelId
+                    })
+                });
+                const resJson = await response.json();
+
+                if (response.ok && resJson.status === "success") {
+                    if (statusEl) {
+                        statusEl.innerText = `✅ ${channelId} চ্যানেলে বাটনসহ পোস্ট সফল হয়েছে!`;
+                        statusEl.className = "text-[11px] text-emerald-400";
+                    }
+                    alert(`✅ ${channelId} চ্যানেলে বাটনসহ পোস্ট পাঠানো হয়েছে!`);
+                } else {
+                    const errMsg = resJson.message || "পোস্ট পাঠানো যায়নি!";
+                    if (statusEl) {
+                        statusEl.innerText = `❌ ত্রুটি: ${errMsg}`;
+                        statusEl.className = "text-[11px] text-red-400";
+                    }
+                    alert(`❌ পোস্ট পাঠানো যায়নি:\n${errMsg}`);
+                }
+            } catch (err) {
+                if (statusEl) {
+                    statusEl.innerText = "❌ সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি!";
+                    statusEl.className = "text-[11px] text-red-400";
+                }
+                alert("❌ সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি!");
+            } finally {
+                if (btnElement) {
+                    btnElement.disabled = false;
+                    btnElement.innerText = originalText;
+                }
             }
         }
 
@@ -586,13 +675,16 @@
                 }
 
                 const item = document.createElement('div');
-                item.className = "flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800";
+                item.className = "flex items-center justify-between bg-slate-900 p-2 rounded-lg border border-slate-800 gap-2";
                 item.innerHTML = `
-                    <div class="flex items-center space-x-2 overflow-hidden mr-2">
+                    <div class="flex items-center space-x-2 overflow-hidden flex-1">
                         <img src="${listImg}" class="w-8 h-8 rounded object-cover shrink-0">
                         <p class="text-[11px] text-slate-300 truncate">${video.caption}</p>
                     </div>
-                    <button onclick="deleteVideo('${video.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-[10px] shrink-0 transition">ডিলিট</button>
+                    <div class="flex items-center space-x-1 shrink-0">
+                        <button type="button" onclick="postVideoToChannel('${video.id}', this)" class="bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1 rounded text-[10px] transition">Post to Channel</button>
+                        <button type="button" onclick="deleteVideo('${video.id}')" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-[10px] transition">ডিলিট</button>
+                    </div>
                 `;
                 listContainer.appendChild(item);
             });

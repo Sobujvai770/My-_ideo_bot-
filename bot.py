@@ -220,15 +220,7 @@ def post_to_channel():
         video_doc = videos_collection.find_one({"id": video_id}) or {}
         caption = custom_caption or video_doc.get("caption") or "🔥 প্রিমিয়াম ভিডিও!"
         thumb_input = custom_photo or video_doc.get("thumb_link") or video_doc.get("thumbnail") or "https://files.catbox.moe/ltjvrt.png"
-        thumb_input = str(thumb_input).strip()
-
-        photo_to_send = thumb_input
-        if not thumb_input.startswith("http"):
-            try:
-                file_info = bot.get_file(thumb_input)
-                photo_to_send = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_info.file_path}"
-            except Exception:
-                photo_to_send = "https://files.catbox.moe/ltjvrt.png"
+        photo_to_send = str(thumb_input).strip()
 
         bot_username = "my_video8_bot"
         deep_link = f"https://t.me/{bot_username}?startapp={video_id}"

@@ -1,6 +1,7 @@
 import os
 import threading
 import time
+import urllib.parse
 import telebot
 from telebot import types
 from flask import Flask, request, jsonify
@@ -182,6 +183,80 @@ def broadcast_api():
                 pass
 
         res = jsonify({"status": "success", "sent": sent_count})
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 200
+    except Exception as e:
+        res = jsonify({"status": "error", "message": str(e)})
+        res.headers.add("Access-Control-Allow-Origin", "*")
+        return res, 500
+
+# চ্যানেলে ছবি, ক্যাপশন এবং Watch Now ও Share বাটনসহ পোস্ট পাঠানোর API
+@app.route('/api/post-to-channel', methods=['POST', 'OPTIONS'])
+def post_to_channel():
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'OK'})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST")
+        return response
+
+    try:
+        req_data = request.get_json(silent=True) or {}
+        video_id = str(req_data.get("video_id") or req_data.get("id") or "").strip()
+        channel_id = str(req_data.get("channel_id") or os.environ.get("CHANNEL_ID") or "").strip()
+        custom_caption = str(req_data.get("caption") or "").strip()
+        custom_photo = str(req_data.get("photo_url") or "").strip()
+
+        if not video_id:
+            res = jsonify({"status": "error", "message": "Video ID is required!"})
+            res.headers.add("Access-Control-Allow-Origin", "*")
+            return res, 400
+
+        if not channel_id:
+            res = jsonify({"status": "error", "message": "Channel ID or @username is required!"})
+            res.headers.add("Access-Control-Allow-Origin", "*")
+            return res, 400
+
+        video_doc = videos_collection.find_one({"id": video_id}) or {}
+        caption = custom_caption or video_doc.get("caption") or "🔥 প্রিমিয়াম ভিডিও!"
+        thumb_input = custom_photo or video_doc.get("thumb_link") or video_doc.get("thumbnail") or "https://files.catbox.moe/ltjvrt.png"
+        thumb_input = str(thumb_input).strip()
+
+        photo_to_send = thumb_input
+        if not thumb_input.startswith("http"):
+            try:
+                file_info = bot.get_file(thumb_input)
+                photo_to_send = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_info.file_path}"
+            except Exception:
+                photo_to_send = "https://files.catbox.moe/ltjvrt.png"
+
+        bot_username = "my_video8_bot"
+        deep_link = f"https://t.me/{bot_username}?startapp={video_id}"
+        share_url = (
+            "https://t.me/share/url?url="
+            + urllib.parse.quote(deep_link, safe="")
+            + "&text="
+            + urllib.parse.quote(caption, safe="")
+        )
+
+        markup = types.InlineKeyboardMarkup()
+        markup.row(
+            types.InlineKeyboardButton("🎬 Watch Now", url=deep_link),
+            types.InlineKeyboardButton("📤 Share", url=share_url)
+        )
+
+        bot.send_photo(
+            channel_id,
+            photo=photo_to_send,
+            caption=caption,
+            reply_markup=markup
+        )
+
+        res = jsonify({
+            "status": "success",
+            "message": "চ্যানেলে বাটনসহ পোস্ট পাঠানো হয়েছে!",
+            "deep_link": deep_link
+        })
         res.headers.add("Access-Control-Allow-Origin", "*")
         return res, 200
     except Exception as e:
